@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>お父さん怖いシミュレーター</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--fg:#e9e4d8;--dim:#9a958a}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP",serif;color:var(--fg);user-select:none}
+canvas#c{display:block;width:100vw;height:100vh}
+#ui{position:fixed;inset:0;pointer-events:none}
+#cross{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:rgba(255,255,255,.5);transition:transform .15s,background .15s}
+#cross.on{transform:scale(1.8);background:rgba(255,240,200,.85)}
+#prompt{position:absolute;left:50%;top:57%;transform:translateX(-50%);font-size:15px;letter-spacing:.1em;text-shadow:0 0 6px #000,0 0 2px #000;opacity:0;transition:opacity .2s;white-space:nowrap}
+#prompt b{display:inline-block;border:1px solid rgba(255,255,255,.5);border-radius:3px;padding:0 6px;margin-right:8px;font-family:sans-serif;font-size:12px;font-weight:normal}
+/* Windows XP（Luna ブルー）風のメッセージウインドウ */
+.xp{position:absolute;left:50%;transform:translateX(-50%);width:min(620px,86vw);border-radius:8px 8px 0 0;background:#0831d9;padding:0 3px 3px;box-shadow:2px 3px 10px rgba(0,0,0,.55);font-family:Tahoma,"Meiryo UI","MS UI Gothic",sans-serif;letter-spacing:0}
+.xp-title{height:28px;display:flex;align-items:center;padding:0 4px 0 6px;color:#fff;font-weight:bold;font-size:13px;text-shadow:1px 1px #0f1089;border-radius:7px 7px 0 0;margin:0 -3px;background:linear-gradient(#0997ff 0%,#0053ee 8%,#0050ee 40%,#06f 88%,#06f 93%,#005bff 95%,#003dd7 96%,#003dd7 100%)}
+.xp-icon{width:16px;height:16px;margin-right:6px;border-radius:3px;background:radial-gradient(circle at 35% 30%,#fff 0 18%,#9fd0ff 19% 45%,#2a6ad8 46%);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.xp-t{flex:1}
+.xp-btns{display:flex;gap:2px}
+.xp-btns i{width:21px;height:21px;border:1px solid #fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;background:linear-gradient(135deg,#3c8cf4,#1d5ed9);box-sizing:border-box;pointer-events:auto;cursor:default}
+.xp-btns i.x{background:linear-gradient(135deg,#e8795a,#c63b10)}
+.xp-body{background:#ece9d8;color:#111;padding:12px 16px 14px;font-size:17px;line-height:1.65;min-height:28px;border:1px solid #919b9c;border-top:none}
+.xp-body .said{font-size:13px;color:#6b6b6b;border-bottom:1px dotted #aaa;margin-bottom:6px;padding-bottom:4px}
+#sub{bottom:5%;opacity:0;transition:opacity .12s,transform .12s}
+#sub.thought .xp-body{font-style:italic;color:#333;background:#f4f2e8}
+#sub.far .xp-title{background:linear-gradient(#7a8fb8 0%,#56688f 10%,#4a5c84 60%,#3c4d73 100%)}
+#sub.far{background:#44557c}
+#chat{bottom:30%;display:none;pointer-events:auto}
+#chat .xp-body{display:flex;gap:8px;align-items:center}
+#chatIn{flex:1;font:16px "Meiryo UI","MS UI Gothic",sans-serif;padding:4px 6px;border:1px solid #7f9db9;outline:none;background:#fff;color:#000}
+#chatSend{font:13px Tahoma,"Meiryo UI",sans-serif;padding:3px 14px;border:1px solid #003c74;border-radius:3px;background:linear-gradient(#fff,#ecebe6 80%,#d6d0c5);cursor:pointer;color:#000}
+#chat .hint{font-size:11px;color:#666;padding:0 16px 8px;background:#ece9d8;border:1px solid #919b9c;border-top:none}
+#obj{position:absolute;left:28px;top:24px;font-size:13px;color:#cfc9bb;letter-spacing:.14em;text-shadow:0 0 6px #000;opacity:0;transition:opacity 1.5s}
+#watch{position:absolute;right:28px;top:22px;font-family:Consolas,monospace;font-size:20px;padding:6px 12px;background:linear-gradient(#26301f,#1a2215);color:#c6e8b4;border:2px solid #555;border-radius:6px;opacity:0;transition:opacity .3s;letter-spacing:.12em;box-shadow:inset 0 0 8px #000}
+#watch small{display:block;font-size:10px;color:#8a9;letter-spacing:.2em}
+#pad{position:absolute;right:28px;bottom:28px;font-size:12px;color:#bbb;letter-spacing:.1em;text-shadow:0 0 4px #000;opacity:0;transition:opacity .3s;text-align:right;line-height:1.8}
+#fade{position:fixed;inset:0;background:#000;opacity:1;transition:opacity 2s;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:5}
+#fadeText{font-size:21px;letter-spacing:.22em;line-height:2.3;text-align:center;opacity:0;transition:opacity 1.6s;white-space:pre-line}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+#title{background:radial-gradient(ellipse at 50% 65%,#1b1a15 0%,#060606 72%);cursor:pointer}
+#title h1{font-weight:normal;font-size:40px;letter-spacing:.35em;margin:0 0 6px;padding-left:.35em}
+#title .sub{color:var(--dim);letter-spacing:.3em;font-size:14px;margin-bottom:44px}
+#title .start{font-size:17px;letter-spacing:.3em;padding:12px 34px;border:1px solid #6a655a;border-radius:2px;animation:blink 2.4s infinite}
+@keyframes blink{50%{opacity:.45}}
+.cfg{margin-top:38px;font-size:13px;color:#aaa39a;letter-spacing:.1em;display:grid;grid-template-columns:auto auto;gap:10px 18px;align-items:center;cursor:default}
+.cfg select,.cfg input{font:inherit;background:#111;color:#ddd;border:1px solid #444}
+.keys{margin-top:34px;font-size:12px;color:#8d877c;line-height:2;letter-spacing:.12em;text-align:center}
+#pause{background:rgba(0,0,0,.72);display:none;cursor:pointer}
+#pause h2{font-weight:normal;letter-spacing:.4em;font-size:22px}
+#pause p{color:#aaa;letter-spacing:.2em;font-size:13px}
+#load{position:fixed;left:50%;bottom:14%;transform:translateX(-50%);font-size:12px;color:#777;letter-spacing:.3em;z-index:11}
+#notice{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e8e3d3;color:#222;padding:26px 34px;font-size:15px;line-height:2;letter-spacing:.06em;box-shadow:0 10px 40px #000;display:none;max-width:520px;font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;border:1px solid #bbb}
+#notice h3{margin:0 0 10px;font-size:16px;border-bottom:1px solid #999}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="cross"></div>
+  <div id="prompt"></div>
+  <div id="sub" class="xp"><div class="xp-title"><span class="xp-icon"></span><span class="xp-t" id="msgWho">メッセージ</span><span class="xp-btns"><i>_</i><i>□</i><i class="x">×</i></span></div><div class="xp-body" id="msgText"></div></div>
+  <div id="chat" class="xp"><div class="xp-title"><span class="xp-icon"></span><span class="xp-t" id="chatWho">話しかける</span><span class="xp-btns"><i class="x" id="chatClose">×</i></span></div><div class="xp-body"><input id="chatIn" maxlength="60" autocomplete="off" placeholder="ここに入力して Enter"><button id="chatSend">送信</button></div><div class="hint">Enter で送信 ／ Esc でやめる（日本語入力できます）</div></div>
+  <div id="obj"></div>
+  <div id="watch"><small>DIGITAL</small><span id="watchT">13:10</span></div>
+  <div id="pad"></div>
+  <div id="notice"></div>
+</div>
+<div id="fade"><div id="fadeText"></div></div>
+<div id="title" class="ov">
+  <h1>お父さん怖いシミュレーター</h1>
+  <div class="sub">一九九七年　八月　泉南</div>
+  <div class="start" id="startBtn">クリックして始める</div>
+  <div class="cfg" onclick="event.stopPropagation()">
+    <span>画質</span><select id="q"><option value="high">高</option><option value="mid">中</option></select>
+    <span>マウス感度</span><input id="sens" type="range" min="0.3" max="2.5" step="0.05" value="1">
+    <span>音量</span><input id="vol" type="range" min="0" max="1.5" step="0.05" value="1">
+  </div>
+  <div class="keys">WASD 移動　／　Shift 走る　／　マウス 見る　／　E 調べる　／　Enter 話しかける（文字を打つ）<br>T 腕時計　／　Esc 一時停止　　※ヘッドホン推奨</div>
+  <div class="keys" style="margin-top:10px;font-size:11px;color:#6d675c">音声：VOICEVOX:青山龍星　VOICEVOX:白上虎太郎　VOICEVOX:冥鳴ひまり　VOICEVOX:ちび式じい　VOICEVOX:玄野武宏　VOICEVOX:雀松朱司　VOICEVOX:No.7　VOICEVOX:四国めたん　VOICEVOX:麒ヶ島宗麟　VOICEVOX:九州そら　VOICEVOX:東北イタコ　VOICEVOX:剣崎雌雄　／　素材：Poly Haven（CC0）</div>
+</div>
+<div id="pause" class="ov"><h2>一時停止</h2><p>クリックで再開</p></div>
+<div id="load">読み込み中……</div>
+<script>window.ASSETS=window.ASSETS||{};</script>
+<script src="assets/assets_list.js" onerror="void 0"></script>
+<script>for (let i = 1; i <= (window.ASSET_PARTS || 0); i++) document.write('<script src="assets/assets_' + i + '.js"><\/script>');</script>
+<script src="assets/assets_se.js" onerror="void 0"></script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>

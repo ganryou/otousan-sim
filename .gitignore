@@ -1,0 +1,24 @@
+# Blender / VOICEVOX 本体（ゲームのフォルダに入っているもの）
+5.2/
+blender*
+BlendThumb*
+*.dll
+*.pdb
+*.cmd
+blender.crt/
+blender.shared/
+license/
+oculus.json
+readme.html
+copyright.txt
+VOICEVOX/
+# Windows XP の効果音（Microsoft の著作物なので公開しない）
+効果音/
+assets/assets_se.js
+# 作業用の中間ファイル
+assets/models_src/
+assets/models_unused/
+assets/bake/bake_in.glb
+assets/assets.js
+.claude/
+node_modules/

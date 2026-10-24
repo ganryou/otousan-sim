@@ -1,0 +1,1 @@
+window.ASSET_PARTS=3;

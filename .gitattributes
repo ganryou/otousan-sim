@@ -1,0 +1,5 @@
+assets/*.js binary
+*.wav binary
+*.glb binary
+*.jpg binary
+*.png binary
