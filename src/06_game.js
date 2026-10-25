@@ -133,6 +133,7 @@ const G = {
       if (p.z < -8.65) return 'toilet'; return 'hall';
     }
     if (p.y < -1 && p.x > -77 && p.x < -55 && p.z < -58 && p.z > -86) return 'station';
+    const ab = TOWN.arcBox; if (ab && p.x > ab.x0 + .2 && p.x < ab.x1 - .2 && p.z > ab.z0 && p.z < ab.z1 && p.y < 3.2) return 'arcade';
     const sb = TOWN.superBox; if (sb && p.x > sb.x0 && p.x < sb.x1 && p.z > sb.z0 && p.z < sb.z1 - 0 && p.y < 3.4) return 'store';
     return 'out';
   },
@@ -241,7 +242,7 @@ Object.assign(G, G_EXT);
 addEventListener('keydown', e => {
   if (CHAT.open) return; KEYS[e.code] = true; if (!started) return;
   if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); openChat(); return; }
-  if (e.code === 'KeyE') { if (G.noticeOpen) { UI.notice.style.display = 'none'; G.noticeOpen = false; return; } if (G.seated && !CUR_IT) { G.stand(); return; } if (CUR_IT && !G.busy) { const it = CUR_IT.userData.it; if (it.act) it.act(); } }
+  if (e.code === 'KeyE') { if (G.noticeOpen) { UI.notice.style.display = 'none'; G.noticeOpen = false; return; } if (G.arcSeat) { arcStand(); return; } if (G.seated && !CUR_IT) { G.stand(); return; } if (CUR_IT && !G.busy) { const it = CUR_IT.userData.it; if (it.act) it.act(); } }
   if (e.code === 'KeyF' && G.seated && G.padOffer > 0 && !G.holdPad) { G.holdPad = true; RPG.mode = 'player'; G.padOffer = 0; G.friendSays('……ほら。', 1.6); }
   if (e.code === 'KeyQ' && G.holdPad) { G.holdPad = false; RPG.mode = 'ai'; G.friendSays(pick(['……おう。', '……うまいじゃん。', '……そこ、惜しかった。']), 2); }
   if (e.code === 'KeyT') { UI.watch.style.opacity = 1; clearTimeout(UI.wt); UI.wt = setTimeout(() => UI.watch.style.opacity = 0, 2500); }
@@ -259,7 +260,7 @@ addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; cam
 const ray = new THREE.Raycaster(); let CUR_IT = null;
 let expo = .8, hemiK = 1;
 function updatePlayer(dt) {
-  if (G.seated || G.busy || G.phase === 'end') { P.vel.set(0, 0, 0); return; }
+  if (G.seated || G.arcSeat || G.busy || G.phase === 'end') { P.vel.set(0, 0, 0); return; }
   const f = new V3(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)), r = new V3(-f.z, 0, f.x);
   const want = new V3(); if (KEYS.KeyW) want.add(f); if (KEYS.KeyS) want.sub(f); if (KEYS.KeyD) want.add(r); if (KEYS.KeyA) want.sub(r);
   const indoor = G.zone !== 'out', sp = (KEYS.ShiftLeft || KEYS.ShiftRight) && !indoor ? 3.3 : (indoor ? 1.25 : 1.7);
@@ -278,6 +279,7 @@ function updatePlayer(dt) {
 }
 function updateCamera() {
   if (G.seated) { camera.position.set(18.7, 2.95 + .78, -2.5); }
+  else if (G.arcSeat) { camera.position.copy(ARC.seatCam); if (ARC.shake > 0) camera.position.y += (Math.random() - .5) * .012; }
   else camera.position.set(P.pos.x, P.pos.y + P.eye + Math.sin(P.bob) * .022, P.pos.z);
   camera.rotation.set(P.pitch, P.yaw, Math.sin(P.bob * .5) * .004);
 }
@@ -287,6 +289,7 @@ function updateInteract() {
   for (const h of hits) { const it = h.object.userData.it; if (!it || !it.label) continue; const lab = it.label(); if (!lab) continue; if (segBlocked(camera.position, h.point)) break; CUR_IT = h.object; UI.prompt.innerHTML = `<b>E</b>${lab}`; break; }
   if (G.seated && !CUR_IT) UI.prompt.innerHTML = '<b>E</b>立ち上がる';
   UI.prompt.style.opacity = (CUR_IT || G.seated) && !G.busy ? 1 : 0; UI.cross.className = CUR_IT ? 'on' : '';
+  if (G.arcSeat) { arcPadUI(); return; }
   UI.pad.style.opacity = G.seated ? 1 : 0; UI.pad.innerHTML = G.holdPad ? 'WASD 移動 ／ Space こうげき<br>Q コントローラーを返す' : (G.padOffer > 0 ? 'F コントローラーを借りる' : '');
 }
 function updateLooks() {
@@ -354,7 +357,7 @@ function updateLights(t, dt) {
   LT.toilet.intensity = G.toiletLight ? 4.5 : 0; MT.bulb.emissive.set(G.toiletLight ? 0xffe0a0 : 0x000000); MT.bulb.emissiveIntensity = 3;
   LT.hall.intensity = G.hallLight ? 4 : 0; W.hallShade.material.emissive.set(G.hallLight ? 0x664a20 : 0x000000);
   // 室内外の明るさ（目の順応）
-  const z = G.zone, targetE = z === 'out' ? curTOD.expOut : z === 'hall' ? (G.hallLight ? 1.3 : 1.55) : z === 'friend' ? 1.25 : z === 'toilet' ? (G.toiletLight ? 1.2 : 2.4) : z === 'station' ? 1.2 : z === 'store' ? 1.0 : 1.5;
+  const z = G.zone, targetE = z === 'out' ? curTOD.expOut : z === 'hall' ? (G.hallLight ? 1.3 : 1.55) : z === 'friend' ? 1.25 : z === 'toilet' ? (G.toiletLight ? 1.2 : 2.4) : z === 'station' ? 1.2 : z === 'store' ? 1.0 : z === 'arcade' ? 1.25 : 1.5;
   expo = lerp(expo, targetE, 1 - Math.exp(-dt * (targetE > expo ? .9 : 2.2))); renderer.toneMappingExposure = expo;
   const hk = z === 'out' ? 1 : .045; hemiK = lerp(hemiK, hk, 1 - Math.exp(-dt * 3)); LT.hemi.intensity = LT.hemiBase * hemiK;
   LT.amb.intensity = z === 'out' ? .05 : .012;
@@ -409,7 +412,7 @@ async function loadBake() {
   const bin = Uint8Array.from(atob(A.bake_glb.split(',')[1]), ch => ch.charCodeAt(0)).buffer;
   const gltf = await new GLTFLoader().parseAsync(bin, '');
   const meta = A.bake_meta ? JSON.parse(A.bake_meta) : { day: 1, eve: 1 };
-  const lt = async src => { const img = new Image(); img.src = src; await img.decode(); const t = new THREE.Texture(img); t.needsUpdate = true; t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.channel = 1; return t; };
+  const lt = async src => { const img = new Image(); const ld = new Promise(r => { img.onload = () => setTimeout(r, 300); img.onerror = r; }); img.src = src; await Promise.race([img.decode().catch(() => { }), ld]); const t = new THREE.Texture(img); t.needsUpdate = true; t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.channel = 1; return t; };
   W.lm = { day: await lt(A.bake_day), eve: A.bake_eve ? await lt(A.bake_eve) : null, ao: A.bake_ao ? await lt(A.bake_ao) : null, meta };
   if (W.lm.ao) W.lm.ao.colorSpace = THREE.NoColorSpace;
   W.bakedMats = []; const LMI = Math.PI * .42;
@@ -456,5 +459,5 @@ $('title').addEventListener('click', async () => {
   UI.fadeText.textContent = '一九九七年　八月\n東京都杉並区　和泉'; UI.fadeText.style.opacity = 1; setTimeout(() => { SFX.train(false); }, 600);
   await wait(3.2); await fadeIn(2.4); setObj('梅崎の家（和泉コーポ 203）'); setTimeout(() => G.thought('泉南。……改札を出て、泉南通りを歩いて、米屋の先の細い道を入る。'), 1500);
 });
-Object.assign(window, { TOWN, TL, DOG, openPhone, phoneDial, famicomBug, stickyPrank, eatSuikaSlice, sayVoice, hasVoice, PASSERS, MOTHER, motherComesHome, THREE, composer, MDL, PROPS, ELV, elvCall, playerInCar, openChat, KEYS, G, P, DOORS, W, MT, LT, RPG, AU, camera, scene, renderer, FRIEND, BROTHER, SRC });
+Object.assign(window, { TOWN, TL, DOG, openPhone, phoneDial, famicomBug, stickyPrank, eatSuikaSlice, sayVoice, hasVoice, PASSERS, MOTHER, motherComesHome, THREE, composer, MDL, PROPS, ELV, elvCall, playerInCar, openChat, KEYS, G, P, DOORS, W, MT, LT, RPG, AU, camera, scene, renderer, FRIEND, BROTHER, SRC, ARC, FG, YAN, arcSit, arcStand, arcCoin, arcOnEnd, fgReset });
 try { init(); } catch (e) { $('load').textContent = 'エラー: ' + e.message + ' ' + (e.stack||'').replace(/http[^ )]*:/g,'L'); console.error(e); }

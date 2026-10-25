@@ -51,7 +51,7 @@ function buildTown() {
   shop(33.5, 40, N, { name: 'クリーニング しらかば', col: 0x3a7ab8, awn: [0x3a7ab8, 0xffffff], type: 'clean' });
   shop(40, 47, N, { name: '不動産 かねこ', col: 0x7a5a2a, awn: [0x7a5a2a, 0xffffff], type: 'fudosan' });
   shop(47, 58, N, { name: '', col: 0x888888, awn: null, type: 'shutter', closed: true });
-  shop(-60, -52, S, { name: 'ゲームコーナー ハロー', col: 0x8a2a8a, awn: [0xe8e040, 0x8a2a8a], type: 'shutter', closed: true, note: '改装中' });
+  shop(-60, -52, S, { name: 'ゲームコーナー ハロー', col: 0x8a2a8a, awn: [0xe8e040, 0x8a2a8a], type: 'arcade', arcade: true, depth: 9 });
   shop(-52, -44, S, { name: 'パン ピエール', col: 0xa86a3a, awn: [0xa86a3a, 0xf0e0c0], type: 'bakery' });
   shop(-44, -36, S, { name: '', col: 0x888888, awn: null, type: 'shutter', closed: true });
   shop(-36, -26, S, { name: '眼鏡の光和堂', col: 0x3a3a5a, awn: [0x3a3a5a, 0xffffff], type: 'glasses' });
@@ -127,11 +127,12 @@ function shop(x0, x1, side, o) {
   const D = o.depth ?? 7, H = o.h ?? (o.type === 'apart' ? R(8.5, 11.5) : pick([5.6, 6.3, 6.3, 7.4, 8.6])), zf = side === 'n' ? -45.8 : -58.2, dir = side === 'n' ? 1 : -1, out = -dir;
   const zb = zf + dir * D, zA = Math.min(zf, zb), zB = Math.max(zf, zb), cx = (x0 + x1) / 2, w = x1 - x0;
   const wm = M({ map: TX.stucco, color: o.type === 'apart' ? o.col : pick([0xd8d0c0, 0xc8c0b0, 0xe0d8c8, 0xb8b4a8, 0xd0c8b8, 0xa8b0b0, 0xc8b8a0, 0xe8e0d0]), uv: 2, ph: { key: 'stucco', uv: 2 } });
-  if (!o.super) box(x0 + .05, x1 - .05, 0, H, zA, zB, wm);
+  if (!o.super && !o.arcade) box(x0 + .05, x1 - .05, 0, H, zA, zB, wm);
   // 屋根の縁と室外機
   box(x0, x1, H, H + .25, zA - .1, zB + .1, MT.concrete, { col: false });
   box(x0 + .5, x0 + 1.3, H + .25, H + .85, zB - (dir > 0 ? 1.2 : -.4) - .6, zB - (dir > 0 ? 1.2 : -.4), MT.ac, { col: false });
   if (o.super) { buildSuper(x0, x1, zf, zb, dir, o); return; }
+  if (o.arcade) { if (!FG.scene) fgInit(); buildArcade(x0, x1, zf, zb, dir, o, H); return; }
   const fz = zf + out * .02; // 正面
   if (o.type === 'apart') { for (let f = 0; f < 3; f++) for (let i = 0; i < Math.floor(w / 3.2); i++) { const wx = x0 + 1 + i * 3.2; box(wx, wx + 1.8, 1 + f * 2.8, 2.4 + f * 2.8, fz - .02, fz + .02, rng() < .4 ? MT.glassA : MT.glassB, { col: false, cast: false }); } return; }
   // 1階の店先

@@ -38,7 +38,8 @@ function buildDoors() {
 // ============================================================
 // 人物（ローポリ）
 // ============================================================
-function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false }) {
+function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false, pants = null, shoes = null }) {
+  const legM = pants || skinMat, wide = pants ? 1.35 : 1;
   const root = new THREE.Group();
   const P = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
   const body = new THREE.Group(); root.add(body);
@@ -54,11 +55,13 @@ function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false }) {
   const earL = P(new THREE.SphereGeometry(.022, 8, 6), skinMat, -.105, 0, 0), earR = P(new THREE.SphereGeometry(.022, 8, 6), skinMat, .105, 0, 0); head.add(earL, earR);
   const arm = (sx) => { const sh = new THREE.Group(); sh.position.set(sx * .2, .14, 0); const up = P(new THREE.CapsuleGeometry(.033, .18, 4, 10), skinMat, 0, -.13, 0); sh.add(up); const el = new THREE.Group(); el.position.set(0, -.26, 0); sh.add(el); const lo = P(new THREE.CapsuleGeometry(.029, .17, 4, 10), skinMat, 0, -.11, 0); el.add(lo); const hand = P(new THREE.SphereGeometry(.036, 12, 10), skinMat, 0, -.235, 0); hand.scale.set(.8, 1.1, 1); el.add(hand); body.add(sh); return { sh, el }; };
   const aL = arm(-1), aR = arm(1);
-  const leg = (sx) => { const hip = new THREE.Group(); hip.position.set(sx * .08, -.2, 0); const th = P(new THREE.CapsuleGeometry(.066, .1, 4, 12), shorts, 0, -.08, 0); hip.add(th); const up = P(new THREE.CapsuleGeometry(.045, .13, 4, 10), skinMat, 0, -.24, 0); hip.add(up); const kn = new THREE.Group(); kn.position.set(0, -.34, 0); hip.add(kn); const lo = P(new THREE.CapsuleGeometry(.038, .27, 4, 10), skinMat, 0, -.17, 0); kn.add(lo); const ft = P(new THREE.CapsuleGeometry(.04, .12, 4, 8), MT.sock, 0, -.35, .04); ft.rotation.x = Math.PI / 2; kn.add(ft); body.add(hip); return { hip, kn }; };
+  const leg = (sx) => { const hip = new THREE.Group(); hip.position.set(sx * .08, -.2, 0); const th = P(new THREE.CapsuleGeometry(.066, .1, 4, 12), shorts, 0, -.08, 0); hip.add(th); const up = P(new THREE.CapsuleGeometry(.045 * wide, .13, 4, 10), legM, 0, -.24, 0); hip.add(up); const kn = new THREE.Group(); kn.position.set(0, -.34, 0); hip.add(kn); const lo = P(new THREE.CapsuleGeometry(.038 * (pants ? 1.25 : 1), .27, 4, 10), legM, 0, -.17, 0); kn.add(lo); const ft = P(new THREE.CapsuleGeometry(.04, .12, 4, 8), shoes || MT.sock, 0, -.35, .04); ft.rotation.x = Math.PI / 2; kn.add(ft); body.add(hip); return { hip, kn }; };
   const lL = leg(-1), lR = leg(1);
   root.scale.setScalar(scale);
   const k = { root, body, head, aL, aR, lL, lR, walkT: 0 };
   k.stand = () => { body.position.set(0, .93, 0); for (const l of [lL, lR]) l.hip.rotation.order = 'XYZ'; body.rotation.set(0, 0, 0); for (const l of [lL, lR]) { l.hip.rotation.set(0, 0, 0); l.kn.rotation.set(0, 0, 0); } for (const a of [aL, aR]) { a.sh.rotation.set(0, 0, 0); a.el.rotation.set(0, 0, 0); } aL.sh.rotation.z = .08; aR.sh.rotation.z = -.08; };
+  k.squat = () => { body.position.set(0, .5, .05); body.rotation.x = .25; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'YXZ'; l.hip.rotation.set(-1.9, -s * .35, 0); l.kn.rotation.set(2.35, 0, 0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-.9, 0, s * .1); a.el.rotation.set(-.6, 0, 0); } };
+  k.sitChair = () => { body.position.set(0, .62, 0); body.rotation.x = .05; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'XYZ'; l.hip.rotation.set(-1.5, 0, s * .06); l.kn.rotation.set(1.5, 0, 0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-1.0, 0, s * .2); a.el.rotation.set(-.4, 0, s * -.3); } };
   k.sitCross = () => { body.position.set(0, .3, 0); body.rotation.x = .12; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'YXZ'; l.hip.rotation.set(-1.52, -s * .6, 0); l.kn.rotation.set(0, 0, s * 2.0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-.75, 0, s * .15); a.el.rotation.set(-.9, 0, s * -.25); } };
   k.walk = (dt, speed) => { k.walkT += dt * speed * 5.2; const s = Math.sin(k.walkT); lL.hip.rotation.x = s * .45; lR.hip.rotation.x = -s * .45; lL.kn.rotation.x = Math.max(0, -s) * .6; lR.kn.rotation.x = Math.max(0, s) * .6; aL.sh.rotation.x = -s * .35; aR.sh.rotation.x = s * .35; body.position.y = .93 + Math.abs(Math.cos(k.walkT)) * .02; };
   k.stand();

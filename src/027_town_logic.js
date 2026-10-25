@@ -11,6 +11,7 @@ async function sayLine(who, text, o = {}) {
 }
 function lineDest(who) {
   if (who.startsWith('phone') || ['jiho', 'weather', 'op', 'pmom', 'neighbor', 'oldwoman', 'umemom'].includes(who) || who === 'father_tel' || who === 'friend_tel') return phoneOut();
+  const ap = arcVoicePos(who); if (ap) { const s = mkSrc(ap[0], ap[1], 1, { ref: who === 'fgann' ? 1.5 : 2 }); setTimeout(() => { const i = AU.sources.indexOf(s); if (i >= 0) AU.sources.splice(i, 1); }, 15000); audioUpdate(camera.position, G.zone); return s.input; }
   const pos = { station: new V3(-66, -2, -72), clerk: new V3(-19, 1.4, -60), driver: TL.busNear ? TL.busNear.g.position.clone().add(new V3(0, 2, 0)) : camera.position.clone(), neighbor2: new V3(-11.5, 2.2, -29) }[who];
   if (!pos) return null; const zone = who === 'station' ? 'station' : who === 'clerk' ? 'store' : 'out';
   const s = mkSrc(pos, zone, 1, { ref: who === 'station' ? 6 : 2 }); setTimeout(() => { const i = AU.sources.indexOf(s); if (i >= 0) AU.sources.splice(i, 1); }, 15000); audioUpdate(camera.position, G.zone); return s.input;
@@ -220,5 +221,5 @@ function phoneUIInit() {
   $('phCall').onclick = () => phoneDial(PH.num); $('phHang').onclick = () => closePhone(); $('phX').onclick = () => closePhone();
   addEventListener('keydown', e => { if (!PH.open) return; e.stopPropagation(); if (/^[0-9]$/.test(e.key)) phoneKey(e.key); else if (e.key === 'Backspace') { PH.num = PH.num.slice(0, -1); phoneDraw(); } else if (e.key === 'Enter') phoneDial(PH.num); else if (e.key === 'Escape') closePhone(); }, true);
 }
-function townInit() { trafficInit(); buildDog(); buildDinner(); stationInit(); phoneUIInit(); }
-function townUpdate(dt) { trafficUpdate(dt); dogUpdate(dt); dinnerUpdate(dt); superUpdate(dt); stationUpdate(dt); for (const m of TOWN.shops) { if (m.isLight) m.intensity = G.evening ? 3 : 0; else m.emissiveIntensity = G.evening ? .9 : .25; } for (const m of TOWN.windows) { m.emissive.set(G.evening ? 0xffe0a0 : 0x000000); m.emissiveIntensity = .5; } if (TOWN.stationSign) TOWN.stationSign.emissiveIntensity = G.evening ? 1.2 : .35; }
+function townInit() { trafficInit(); buildDog(); buildDinner(); stationInit(); phoneUIInit(); arcadeInit(); }
+function townUpdate(dt) { trafficUpdate(dt); dogUpdate(dt); dinnerUpdate(dt); superUpdate(dt); stationUpdate(dt); arcadeUpdate(dt); for (const m of TOWN.shops) { if (m.isLight) m.intensity = G.evening ? 3 : 0; else m.emissiveIntensity = G.evening ? .9 : .25; } for (const m of TOWN.windows) { m.emissive.set(G.evening ? 0xffe0a0 : 0x000000); m.emissiveIntensity = .5; } if (TOWN.stationSign) TOWN.stationSign.emissiveIntensity = G.evening ? 1.2 : .35; }

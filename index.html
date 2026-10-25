@@ -77,7 +77,7 @@ canvas#c{display:block;width:100vw;height:100vh}
     <span>マウス感度</span><input id="sens" type="range" min="0.3" max="2.5" step="0.05" value="1">
     <span>音量</span><input id="vol" type="range" min="0" max="1.5" step="0.05" value="1">
   </div>
-  <div class="keys">WASD 移動　／　Shift 走る　／　マウス 見る　／　E 調べる　／　Enter 話しかける（文字を打つ）<br>T 腕時計　／　Esc 一時停止　　※ヘッドホン推奨</div>
+  <div class="keys">WASD 移動　／　Shift 走る　／　マウス 見る　／　E 調べる　／　Enter 話しかける（文字を打つ）<br>T 腕時計　／　Esc 一時停止<br>ゲーセンの対戦台：A/D 移動　／　J パンチ　／　K キック　／　L ガード　／　Space 50円を入れる　　※ヘッドホン推奨</div>
   <div class="keys" style="margin-top:10px;font-size:11px;color:#6d675c">音声：VOICEVOX:青山龍星　VOICEVOX:白上虎太郎　VOICEVOX:冥鳴ひまり　VOICEVOX:ちび式じい　VOICEVOX:玄野武宏　VOICEVOX:雀松朱司　VOICEVOX:No.7　VOICEVOX:四国めたん　VOICEVOX:麒ヶ島宗麟　VOICEVOX:九州そら　VOICEVOX:東北イタコ　VOICEVOX:剣崎雌雄　／　素材：Poly Haven（CC0）</div>
 </div>
 <div id="pause" class="ov"><h2>一時停止</h2><p>クリックで再開</p></div>
@@ -1105,7 +1105,8 @@ function buildDoors() {
 // ============================================================
 // 人物（ローポリ）
 // ============================================================
-function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false }) {
+function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false, pants = null, shoes = null }) {
+  const legM = pants || skinMat, wide = pants ? 1.35 : 1;
   const root = new THREE.Group();
   const P = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
   const body = new THREE.Group(); root.add(body);
@@ -1121,11 +1122,13 @@ function makeKid({ shirt, shorts, skinMat, scale = 1, pale = false }) {
   const earL = P(new THREE.SphereGeometry(.022, 8, 6), skinMat, -.105, 0, 0), earR = P(new THREE.SphereGeometry(.022, 8, 6), skinMat, .105, 0, 0); head.add(earL, earR);
   const arm = (sx) => { const sh = new THREE.Group(); sh.position.set(sx * .2, .14, 0); const up = P(new THREE.CapsuleGeometry(.033, .18, 4, 10), skinMat, 0, -.13, 0); sh.add(up); const el = new THREE.Group(); el.position.set(0, -.26, 0); sh.add(el); const lo = P(new THREE.CapsuleGeometry(.029, .17, 4, 10), skinMat, 0, -.11, 0); el.add(lo); const hand = P(new THREE.SphereGeometry(.036, 12, 10), skinMat, 0, -.235, 0); hand.scale.set(.8, 1.1, 1); el.add(hand); body.add(sh); return { sh, el }; };
   const aL = arm(-1), aR = arm(1);
-  const leg = (sx) => { const hip = new THREE.Group(); hip.position.set(sx * .08, -.2, 0); const th = P(new THREE.CapsuleGeometry(.066, .1, 4, 12), shorts, 0, -.08, 0); hip.add(th); const up = P(new THREE.CapsuleGeometry(.045, .13, 4, 10), skinMat, 0, -.24, 0); hip.add(up); const kn = new THREE.Group(); kn.position.set(0, -.34, 0); hip.add(kn); const lo = P(new THREE.CapsuleGeometry(.038, .27, 4, 10), skinMat, 0, -.17, 0); kn.add(lo); const ft = P(new THREE.CapsuleGeometry(.04, .12, 4, 8), MT.sock, 0, -.35, .04); ft.rotation.x = Math.PI / 2; kn.add(ft); body.add(hip); return { hip, kn }; };
+  const leg = (sx) => { const hip = new THREE.Group(); hip.position.set(sx * .08, -.2, 0); const th = P(new THREE.CapsuleGeometry(.066, .1, 4, 12), shorts, 0, -.08, 0); hip.add(th); const up = P(new THREE.CapsuleGeometry(.045 * wide, .13, 4, 10), legM, 0, -.24, 0); hip.add(up); const kn = new THREE.Group(); kn.position.set(0, -.34, 0); hip.add(kn); const lo = P(new THREE.CapsuleGeometry(.038 * (pants ? 1.25 : 1), .27, 4, 10), legM, 0, -.17, 0); kn.add(lo); const ft = P(new THREE.CapsuleGeometry(.04, .12, 4, 8), shoes || MT.sock, 0, -.35, .04); ft.rotation.x = Math.PI / 2; kn.add(ft); body.add(hip); return { hip, kn }; };
   const lL = leg(-1), lR = leg(1);
   root.scale.setScalar(scale);
   const k = { root, body, head, aL, aR, lL, lR, walkT: 0 };
   k.stand = () => { body.position.set(0, .93, 0); for (const l of [lL, lR]) l.hip.rotation.order = 'XYZ'; body.rotation.set(0, 0, 0); for (const l of [lL, lR]) { l.hip.rotation.set(0, 0, 0); l.kn.rotation.set(0, 0, 0); } for (const a of [aL, aR]) { a.sh.rotation.set(0, 0, 0); a.el.rotation.set(0, 0, 0); } aL.sh.rotation.z = .08; aR.sh.rotation.z = -.08; };
+  k.squat = () => { body.position.set(0, .5, .05); body.rotation.x = .25; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'YXZ'; l.hip.rotation.set(-1.9, -s * .35, 0); l.kn.rotation.set(2.35, 0, 0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-.9, 0, s * .1); a.el.rotation.set(-.6, 0, 0); } };
+  k.sitChair = () => { body.position.set(0, .62, 0); body.rotation.x = .05; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'XYZ'; l.hip.rotation.set(-1.5, 0, s * .06); l.kn.rotation.set(1.5, 0, 0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-1.0, 0, s * .2); a.el.rotation.set(-.4, 0, s * -.3); } };
   k.sitCross = () => { body.position.set(0, .3, 0); body.rotation.x = .12; for (const [l, s] of [[lL, 1], [lR, -1]]) { l.hip.rotation.order = 'YXZ'; l.hip.rotation.set(-1.52, -s * .6, 0); l.kn.rotation.set(0, 0, s * 2.0); } for (const [a, s] of [[aL, 1], [aR, -1]]) { a.sh.rotation.set(-.75, 0, s * .15); a.el.rotation.set(-.9, 0, s * -.25); } };
   k.walk = (dt, speed) => { k.walkT += dt * speed * 5.2; const s = Math.sin(k.walkT); lL.hip.rotation.x = s * .45; lR.hip.rotation.x = -s * .45; lL.kn.rotation.x = Math.max(0, -s) * .6; lR.kn.rotation.x = Math.max(0, s) * .6; aL.sh.rotation.x = -s * .35; aR.sh.rotation.x = s * .35; body.position.y = .93 + Math.abs(Math.cos(k.walkT)) * .02; };
   k.stand();
@@ -1274,7 +1277,7 @@ function buildTown() {
   shop(33.5, 40, N, { name: 'クリーニング しらかば', col: 0x3a7ab8, awn: [0x3a7ab8, 0xffffff], type: 'clean' });
   shop(40, 47, N, { name: '不動産 かねこ', col: 0x7a5a2a, awn: [0x7a5a2a, 0xffffff], type: 'fudosan' });
   shop(47, 58, N, { name: '', col: 0x888888, awn: null, type: 'shutter', closed: true });
-  shop(-60, -52, S, { name: 'ゲームコーナー ハロー', col: 0x8a2a8a, awn: [0xe8e040, 0x8a2a8a], type: 'shutter', closed: true, note: '改装中' });
+  shop(-60, -52, S, { name: 'ゲームコーナー ハロー', col: 0x8a2a8a, awn: [0xe8e040, 0x8a2a8a], type: 'arcade', arcade: true, depth: 9 });
   shop(-52, -44, S, { name: 'パン ピエール', col: 0xa86a3a, awn: [0xa86a3a, 0xf0e0c0], type: 'bakery' });
   shop(-44, -36, S, { name: '', col: 0x888888, awn: null, type: 'shutter', closed: true });
   shop(-36, -26, S, { name: '眼鏡の光和堂', col: 0x3a3a5a, awn: [0x3a3a5a, 0xffffff], type: 'glasses' });
@@ -1350,11 +1353,12 @@ function shop(x0, x1, side, o) {
   const D = o.depth ?? 7, H = o.h ?? (o.type === 'apart' ? R(8.5, 11.5) : pick([5.6, 6.3, 6.3, 7.4, 8.6])), zf = side === 'n' ? -45.8 : -58.2, dir = side === 'n' ? 1 : -1, out = -dir;
   const zb = zf + dir * D, zA = Math.min(zf, zb), zB = Math.max(zf, zb), cx = (x0 + x1) / 2, w = x1 - x0;
   const wm = M({ map: TX.stucco, color: o.type === 'apart' ? o.col : pick([0xd8d0c0, 0xc8c0b0, 0xe0d8c8, 0xb8b4a8, 0xd0c8b8, 0xa8b0b0, 0xc8b8a0, 0xe8e0d0]), uv: 2, ph: { key: 'stucco', uv: 2 } });
-  if (!o.super) box(x0 + .05, x1 - .05, 0, H, zA, zB, wm);
+  if (!o.super && !o.arcade) box(x0 + .05, x1 - .05, 0, H, zA, zB, wm);
   // 屋根の縁と室外機
   box(x0, x1, H, H + .25, zA - .1, zB + .1, MT.concrete, { col: false });
   box(x0 + .5, x0 + 1.3, H + .25, H + .85, zB - (dir > 0 ? 1.2 : -.4) - .6, zB - (dir > 0 ? 1.2 : -.4), MT.ac, { col: false });
   if (o.super) { buildSuper(x0, x1, zf, zb, dir, o); return; }
+  if (o.arcade) { if (!FG.scene) fgInit(); buildArcade(x0, x1, zf, zb, dir, o, H); return; }
   const fz = zf + out * .02; // 正面
   if (o.type === 'apart') { for (let f = 0; f < 3; f++) for (let i = 0; i < Math.floor(w / 3.2); i++) { const wx = x0 + 1 + i * 3.2; box(wx, wx + 1.8, 1 + f * 2.8, 2.4 + f * 2.8, fz - .02, fz + .02, rng() < .4 ? MT.glassA : MT.glassB, { col: false, cast: false }); } return; }
   // 1階の店先
@@ -1516,6 +1520,7 @@ async function sayLine(who, text, o = {}) {
 }
 function lineDest(who) {
   if (who.startsWith('phone') || ['jiho', 'weather', 'op', 'pmom', 'neighbor', 'oldwoman', 'umemom'].includes(who) || who === 'father_tel' || who === 'friend_tel') return phoneOut();
+  const ap = arcVoicePos(who); if (ap) { const s = mkSrc(ap[0], ap[1], 1, { ref: who === 'fgann' ? 1.5 : 2 }); setTimeout(() => { const i = AU.sources.indexOf(s); if (i >= 0) AU.sources.splice(i, 1); }, 15000); audioUpdate(camera.position, G.zone); return s.input; }
   const pos = { station: new V3(-66, -2, -72), clerk: new V3(-19, 1.4, -60), driver: TL.busNear ? TL.busNear.g.position.clone().add(new V3(0, 2, 0)) : camera.position.clone(), neighbor2: new V3(-11.5, 2.2, -29) }[who];
   if (!pos) return null; const zone = who === 'station' ? 'station' : who === 'clerk' ? 'store' : 'out';
   const s = mkSrc(pos, zone, 1, { ref: who === 'station' ? 6 : 2 }); setTimeout(() => { const i = AU.sources.indexOf(s); if (i >= 0) AU.sources.splice(i, 1); }, 15000); audioUpdate(camera.position, G.zone); return s.input;
@@ -1725,8 +1730,491 @@ function phoneUIInit() {
   $('phCall').onclick = () => phoneDial(PH.num); $('phHang').onclick = () => closePhone(); $('phX').onclick = () => closePhone();
   addEventListener('keydown', e => { if (!PH.open) return; e.stopPropagation(); if (/^[0-9]$/.test(e.key)) phoneKey(e.key); else if (e.key === 'Backspace') { PH.num = PH.num.slice(0, -1); phoneDraw(); } else if (e.key === 'Enter') phoneDial(PH.num); else if (e.key === 'Escape') closePhone(); }, true);
 }
-function townInit() { trafficInit(); buildDog(); buildDinner(); stationInit(); phoneUIInit(); }
-function townUpdate(dt) { trafficUpdate(dt); dogUpdate(dt); dinnerUpdate(dt); superUpdate(dt); stationUpdate(dt); for (const m of TOWN.shops) { if (m.isLight) m.intensity = G.evening ? 3 : 0; else m.emissiveIntensity = G.evening ? .9 : .25; } for (const m of TOWN.windows) { m.emissive.set(G.evening ? 0xffe0a0 : 0x000000); m.emissiveIntensity = .5; } if (TOWN.stationSign) TOWN.stationSign.emissiveIntensity = G.evening ? 1.2 : .35; }
+function townInit() { trafficInit(); buildDog(); buildDinner(); stationInit(); phoneUIInit(); arcadeInit(); }
+function townUpdate(dt) { trafficUpdate(dt); dogUpdate(dt); dinnerUpdate(dt); superUpdate(dt); stationUpdate(dt); arcadeUpdate(dt); for (const m of TOWN.shops) { if (m.isLight) m.intensity = G.evening ? 3 : 0; else m.emissiveIntensity = G.evening ? .9 : .25; } for (const m of TOWN.windows) { m.emissive.set(G.evening ? 0xffe0a0 : 0x000000); m.emissiveIntensity = .5; } if (TOWN.stationSign) TOWN.stationSign.emissiveIntensity = G.evening ? 1.2 : .35; }
+
+// ============================================================
+// 50円ゲーセン「ゲームコーナー ハロー」と、和泉南中の不良たち
+// ============================================================
+const ARC = { cabs: [], att: [], acc: 0, fgAcc: 0, shake: 0, seat: null, chatT: 6, talking: false, stare: 0, stared: 0, watchT: 0, watchCD: 0, challenged: false };
+const YAN = {};
+// 会話（[話し手, セリフ]）。tools/gen_voice.js がこの形を拾って音声にする
+const YAN_TALK = [
+  [['yan1', '……なあ、明日プール行かね？'], ['yan2', '……だりい。'], ['yan1', '……だよな。']],
+  [['yan2', '……ハローの格ゲー、また新しいの入るらしいぜ。'], ['yan1', '……マジで？ 五十円？'], ['yan2', '……たぶん百円。'], ['yan1', '……ふざけんなよ。']],
+  [['yan1', '……センコーにバレたら、また呼び出しだぞ。'], ['yan2', '……夏休みだから関係ねえって。']],
+  [['yan2', '……あちい。'], ['yan1', '……あちいな。']],
+  [['yan1', '……泉南中の連中、最近調子こいてるよな。'], ['yan2', '……今度シメる？'], ['yan1', '……いや、めんどくせえ。']],
+  [['yan2', '……ポケベル、鳴んねえ。'], ['yan1', '……誰も打ってねえんだろ。']],
+  [['yan1', '……ジャンプ、もう読んだ？'], ['yan2', '……まだ。あとで立ち読みしてくるわ。']],
+];
+const YAN_STARE = [['yan1', '……なんだよ。'], ['yan2', '……見てんじゃねえよ。'], ['yan1', '……和泉南中？ ……ちげえか。']];
+const YAN_ASK = [['yan1', '……あ？ なんか用かよ。'], ['yan2', '……中、入んなら入れよ。'], ['yan1', '……ガキはさっさと帰れって。']];
+const YAN_IN = [['yan3', '……なに見てんだよ。'], ['yan3', '……あっち行けよ。'], ['yan3', '……チッ。'], ['yan3', '……今のなしな。'], ['yan3', '……よえーな。'], ['yan3', '……出直してこいよ。'], ['yan3', '……もう一回やれよ。']];
+const yanLine = (who, t, o = {}) => { if (o.sub !== false) showSub(t, { who: o.label || '不良', cls: o.far ? 'far' : '', dur: Math.max(2, t.length * .15 + 1), noVoice: true }); return sayLine(who, t); };
+
+// ---- 筐体の画面（ブラウン管）
+function arcCRT(map, hud) {
+  return new THREE.ShaderMaterial({
+    uniforms: { map: { value: map }, hud: { value: hud }, useHud: { value: hud ? 1 : 0 }, time: { value: 0 }, bright: { value: 1.15 }, jolt: { value: 0 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader: `uniform sampler2D map, hud; uniform float time, bright, useHud, jolt; varying vec2 vUv;
+      vec2 curve(vec2 uv){ uv=uv*2.-1.; vec2 o=abs(uv.yx)/vec2(5.,4.); uv=uv+uv*o*o; return uv*.5+.5; }
+      void main(){ vec2 uv=curve(vUv); if(uv.x<0.||uv.y<0.||uv.x>1.||uv.y>1.){ gl_FragColor=vec4(0.003,0.004,0.005,1.); return; }
+        uv.x += jolt*sin(uv.y*40.+time*60.)*.02;
+        vec2 px = vec2(1./320., 0.);
+        vec3 c = vec3(texture2D(map, uv+px).r, texture2D(map, uv).g, texture2D(map, uv-px).b);
+        if (useHud > .5) { vec4 h = texture2D(hud, uv); c = mix(c, h.rgb, h.a); }
+        c = min(c, vec3(1.2));
+        float sl = .75 + .25*sin(uv.y*240.*6.2832);
+        float mask = .88 + .12*sin(gl_FragCoord.x*2.0944);
+        vec2 v = uv*(1.-uv); float vig = pow(v.x*v.y*16., .25);
+        c = c*sl*mask*vig*bright + vec3(.005,.007,.009);
+        gl_FragColor = vec4(c, 1.); }`,
+  });
+}
+// ---- ほかのゲームのデモ画面（キャンバスに描いて、少しずつ動かす）
+function attractScreen(kind, seed) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 192; const g = cv.getContext('2d'), r = mulberry32(seed);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
+  const st = { stars: Array.from({ length: 40 }, () => [r() * 256, r() * 192, .5 + r() * 2]), en: [], blocks: [], t: r() * 10, q: 0 };
+  const cols = ['#e33', '#3c3', '#36f', '#fd3', '#c3c', '#3cc'];
+  const draw = dt => {
+    st.t += dt; const t = st.t;
+    if (kind === 'shoot') {
+      g.fillStyle = '#000010'; g.fillRect(0, 0, 256, 192);
+      for (const s of st.stars) { s[1] = (s[1] + s[2] * dt * 40) % 192; g.fillStyle = s[2] > 1.8 ? '#fff' : '#88a'; g.fillRect(s[0], s[1], 1, s[2] > 1.5 ? 2 : 1); }
+      if (r() < dt * 2) st.en.push([20 + r() * 216, -10, (r() - .5) * 40]); for (const e of st.en) { e[1] += dt * 50; e[0] += e[2] * dt; g.fillStyle = '#f84'; g.fillRect(e[0] - 6, e[1] - 4, 12, 8); g.fillStyle = '#ff0'; g.fillRect(e[0] - 2, e[1] + 4, 4, 3); } st.en = st.en.filter(e => e[1] < 200);
+      const sx = 128 + Math.sin(t * 1.3) * 80; g.fillStyle = '#6cf'; g.beginPath(); g.moveTo(sx, 160); g.lineTo(sx - 9, 176); g.lineTo(sx + 9, 176); g.fill(); g.fillStyle = '#ff8'; for (let i = 0; i < 5; i++) g.fillRect(sx - 1, 150 - ((t * 300 + i * 30) % 150), 2, 6);
+      g.fillStyle = '#fff'; g.font = 'bold 10px monospace'; g.fillText('1UP  ' + String(Math.floor(t * 130) * 10).padStart(7, '0'), 6, 12); g.fillText('HI 0500000', 160, 12);
+    } else if (kind === 'puzzle') {
+      g.fillStyle = '#102040'; g.fillRect(0, 0, 256, 192); g.fillStyle = '#000'; g.fillRect(80, 8, 96, 176); g.strokeStyle = '#88f'; g.strokeRect(80, 8, 96, 176);
+      if (!st.grid) st.grid = Array.from({ length: 22 }, (_, y) => Array.from({ length: 12 }, () => y > 13 && r() < .8 ? cols[Math.floor(r() * 6)] : null));
+      st.q += dt; if (st.q > .5) { st.q = 0; const y = 13 + Math.floor(r() * 9), x = Math.floor(r() * 12); st.grid[y][x] = st.grid[y][x] ? null : cols[Math.floor(r() * 6)]; }
+      for (let y = 0; y < 22; y++) for (let x = 0; x < 12; x++) if (st.grid[y][x]) { g.fillStyle = st.grid[y][x]; g.fillRect(80 + x * 8, 8 + y * 8, 7, 7); }
+      const fy = (t * 30) % 110; g.fillStyle = cols[Math.floor(t / 3.6) % 6]; for (let i = 0; i < 3; i++) g.fillRect(120, 8 + fy + i * 8, 7, 7);
+      g.fillStyle = '#fff'; g.font = 'bold 11px monospace'; g.fillText('COLUMN', 12, 40); g.fillText('DROP', 12, 54); g.fillText('SCORE', 190, 40); g.fillText(String(Math.floor(t * 77)), 190, 54);
+    } else if (kind === 'race') {
+      g.fillStyle = '#58c'; g.fillRect(0, 0, 256, 90); g.fillStyle = '#3a6a2a'; g.fillRect(0, 90, 256, 102);
+      const cv2 = Math.sin(t * .5) * 50;
+      for (let y = 90; y < 192; y += 2) { const k = (y - 90) / 102, w = 20 + k * 220, cx = 128 + cv2 * (1 - k) ** 2, z = 1 / (k + .05); g.fillStyle = Math.floor(z * 3 + t * 14) % 2 ? '#666' : '#5e5e5e'; g.fillRect(cx - w / 2, y, w, 2); g.fillStyle = Math.floor(z * 3 + t * 14) % 2 ? '#e33' : '#fff'; g.fillRect(cx - w / 2 - 6 * k, y, 6 * k, 2); g.fillRect(cx + w / 2, y, 6 * k, 2); }
+      g.fillStyle = '#d22'; g.fillRect(110, 160, 36, 16); g.fillStyle = '#222'; g.fillRect(108, 172, 8, 6); g.fillRect(140, 172, 8, 6);
+      g.fillStyle = '#ff0'; g.font = 'bold 12px monospace'; g.fillText('TIME ' + (60 - Math.floor(t % 60)), 8, 14); g.fillText(Math.floor(180 + Math.sin(t) * 40) + 'km/h', 180, 14);
+    } else if (kind === 'mahjong') {
+      g.fillStyle = '#0a5a2a'; g.fillRect(0, 0, 256, 192);
+      for (let i = 0; i < 13; i++) { g.fillStyle = '#f4f0e0'; g.fillRect(14 + i * 17, 150, 15, 22); g.fillStyle = ['#c22', '#226', '#262'][i % 3]; g.font = '10px sans-serif'; g.fillText('一二三四五六七八九'[i % 9], 17 + i * 17, 165); }
+      for (let i = 0; i < 9; i++) { g.fillStyle = '#e8e4d0'; g.fillRect(60 + i * 15, 20, 13, 18); }
+      g.fillStyle = Math.floor(t * 2) % 2 ? '#ff0' : '#fff'; g.font = `bold 18px ${GOTH}`; g.fillText('麻雀 夜桜', 80, 100); g.font = 'bold 11px monospace'; g.fillText('PUSH START', 92, 130);
+    } else {
+      g.fillStyle = '#1838a8'; g.fillRect(0, 0, 256, 192); g.fillStyle = '#fff'; g.font = `bold 16px ${GOTH}`; g.fillText('クイズ 雑学王', 70, 30);
+      g.font = `12px ${GOTH}`; const qs = ['日本でいちばん高い山は？', '「源氏物語」の作者は？', '1ダースはいくつ？', 'パンダの好物は？']; g.fillText('Q. ' + qs[Math.floor(t / 4) % 4], 20, 70);
+      for (let i = 0; i < 4; i++) { g.fillStyle = Math.floor(t * 3) % 4 === i ? '#fd3' : '#4a6ad8'; g.fillRect(30, 90 + i * 24, 196, 20); g.fillStyle = '#fff'; g.fillText(['A', 'B', 'C', 'D'][i], 38, 105 + i * 24); }
+    }
+    tex.needsUpdate = true;
+  };
+  draw(0); return { tex, draw };
+}
+function marqueeTex(title, col) {
+  return labelTex(256, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, col); gr.addColorStop(1, '#111'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 4; g.font = `bold 30px Impact,${GOTH}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText(title, w / 2, h / 2); g.fillText(title, w / 2, h / 2); });
+}
+// ---- 筐体（アストロシティのような、座って遊ぶ型）。ローカルでは +z が遊ぶ人の側
+function arcCab(x, z, ry, scrMat, title, col) {
+  const grp = new THREE.Group(); grp.position.set(x, SW_Y, z); grp.rotation.y = ry; scene.add(grp);
+  const body = M({ color: 0xe8e8e4, rough: .45 }), dark = M({ color: 0x1a1a1e, rough: .5 }), panelM = M({ color: col, rough: .5 });
+  const B = (w, h, d, m, px, py, pz, rx = 0) => { const g = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); g.position.set(px, py, pz); g.rotation.x = rx; g.castShadow = true; g.receiveShadow = true; grp.add(g); return g; };
+  B(.74, .72, .7, body, 0, .36, -.1);                 // 下の箱
+  B(.74, .12, .34, panelM, 0, .78, .22, .18);         // 操作パネル
+  B(.74, 1.0, .5, body, 0, 1.22, -.2);                // 上の箱
+  B(.6, .48, .06, dark, 0, 1.22, .06, -.3);           // 画面のふち
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(.54, .405), scrMat); scr.position.set(0, 1.22, .095); scr.rotation.x = -.3; grp.add(scr);
+  const mq = new THREE.Mesh(new THREE.BoxGeometry(.74, .16, .2), new THREE.MeshStandardMaterial({ map: marqueeTex(title, col), emissive: 0xffffff, emissiveMap: marqueeTex(title, col), emissiveIntensity: .9 })); mq.position.set(0, 1.66, .02); grp.add(mq);
+  // レバーとボタン
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, .08, 6), dark); stick.position.set(-.18, .89, .24); grp.add(stick);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(.022, 10, 8), M({ color: 0xd02020, rough: .3 })); ball.position.set(-.18, .93, .24); grp.add(ball);
+  for (let i = 0; i < 3; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .015, 12), M({ color: [0x2060e0, 0xe0d020, 0xe03030][i], rough: .3 })); b.position.set(.04 + i * .07, .86, .23); b.rotation.x = .18; grp.add(b); }
+  B(.12, .05, .02, M({ color: 0x888888, metal: .7, rough: .3 }), .2, .55, .255);   // コイン投入口
+  // 丸いすツール
+  const stool = new THREE.Group(); stool.position.set(0, 0, .78); grp.add(stool);
+  const seatM = M({ color: 0xb02020, rough: .6 }), legM = M({ color: 0x888888, metal: .8, rough: .3 });
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(.17, .17, .06, 16), seatM); seat.position.y = .46; seat.castShadow = true; stool.add(seat);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, .44, 8), legM); pole.position.y = .22; stool.add(pole);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(.16, .18, .03, 12), legM); foot.position.y = .015; stool.add(foot);
+  // 当たり判定（向きは 90 度ごとなので、箱の向きを入れ替えるだけ）
+  const c = Math.round(Math.cos(ry)), s = Math.round(Math.sin(ry)), lx = .4, lz0 = -.47, lz1 = .42;
+  const pts = [[-lx, lz0], [lx, lz0], [-lx, lz1], [lx, lz1]].map(([a, b]) => [x + a * c + b * s, z - a * s + b * c]);
+  addCol(Math.min(...pts.map(p => p[0])), Math.max(...pts.map(p => p[0])), 0, 1.8, Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[1])));
+  const cab = { grp, scr, stool, x, z, ry, seatPos: new V3(x + .78 * s, SW_Y, z + .78 * c) };
+  ARC.cabs.push(cab); return cab;
+}
+// ---- 建物（shop() から呼ばれる）
+function buildArcade(x0, x1, zf, zb, dir, o, H) {
+  const zA = Math.min(zf, zb), zB = Math.max(zf, zb), out = -dir, cx = (x0 + x1) / 2, CH = 3.0;
+  const wm = M({ map: TX.stucco, color: 0xd8d0c8, uv: 2 }), inW = M({ color: 0x2a2234, rough: .9 }), fl = M({ color: 0x3a3448, rough: .95 });
+  // 外壁と正面（入口のまわりはガラス）
+  box(x0, x1, CH, H, zf - .1, zf + .1, wm, { col: false });
+  box(x0, x0 + .2, 0, H, zA, zB, wm); box(x1 - .2, x1, 0, H, zA, zB, wm); box(x0, x1, 0, H, zA, zA + .2, wm);
+  const dX0 = cx - 1.1, dX1 = cx + 1.1, glass = M({ color: 0x8090a0, rough: .05, metal: .6, transparent: true, opacity: .45 });
+  box(x0 + .2, dX0, 0, CH, zf - .04, zf + .04, glass, { cast: false }); box(dX1, x1 - .2, 0, CH, zf - .04, zf + .04, glass, { cast: false });
+  for (const xx of [x0 + .2, dX0, dX1, x1 - .2]) box(xx - .05, xx + .05, 0, CH, zf - .06, zf + .06, MT.alu, { col: false });
+  box(x0 + .2, x1 - .2, CH - .08, CH, zf - .06, zf + .06, MT.alu, { col: false });
+  // ガラスに貼られたポスター
+  const poster = (title, c1, c2) => labelTex(256, 360, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(0,0,0,.35)'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(60 + i * 30, 200 - i * 12, 40, 0, 7); g.fill(); } g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 5; g.font = `bold 34px Impact,${GOTH}`; g.textAlign = 'center'; g.strokeText(title, w / 2, 70); g.fillText(title, w / 2, 70); g.font = `bold 22px ${GOTH}`; g.fillText('好評稼働中！', w / 2, 320); });
+  decal(poster('FIGHTING EDGE 2', '#e84020', '#401010'), .7, 1.0, new V3(x0 + .9, 1.5, zf + out * .05), out > 0 ? 0 : Math.PI);
+  decal(poster('STAR BLASTER', '#2040c0', '#000020'), .7, 1.0, new V3(x1 - .9, 1.5, zf + out * .05), out > 0 ? 0 : Math.PI);
+  const yen50 = labelTex(256, 128, (g, w, h) => { g.fillStyle = '#ffe020'; g.fillRect(0, 0, w, h); g.fillStyle = '#d01010'; g.font = `bold 64px ${GOTH}`; g.textAlign = 'center'; g.fillText('全機種', w / 2, 58); g.font = `bold 50px ${GOTH}`; g.fillText('50円', w / 2, 116); });
+  decal(yen50, .7, .35, new V3(x0 + 1.9, 2.2, zf + out * .05), out > 0 ? 0 : Math.PI);
+  // 床・天井・内壁
+  box(x0, x1, 0, SW_Y, zA, zB, fl, { col: false }); surf(x0 + .2, x1 - .2, zA + .2, zB, SW_Y);
+  box(x0 + .2, x1 - .2, CH, CH + .1, zA + .2, zB - .1, M({ color: 0x18161c, rough: .9 }), { col: false });
+  box(x0 + .2, x0 + .22, SW_Y, CH, zA + .2, zB - .1, inW, { col: false }); box(x1 - .22, x1 - .2, SW_Y, CH, zA + .2, zB - .1, inW, { col: false }); box(x0 + .2, x1 - .2, SW_Y, CH, zA + .2, zA + .22, inW, { col: false });
+  TOWN.arcBox = { x0, x1, z0: zA, z1: zB };
+  // 看板（屋号）
+  const st = labelTex(1024, 160, (g, w, h) => { g.fillStyle = '#7a1a8a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffe040'; g.font = `bold 92px ${GOTH}`; g.textAlign = 'center'; g.fillText('ゲームコーナー ハロー', w / 2, 112); for (let i = 0; i < 24; i++) { g.fillStyle = i % 2 ? '#fff' : '#ff4080'; g.beginPath(); g.arc(20 + i * 43, 12, 6, 0, 7); g.arc(20 + i * 43, h - 12, 6, 0, 7); g.fill(); } });
+  const sm = new THREE.MeshStandardMaterial({ map: st, emissive: 0xffffff, emissiveMap: st, emissiveIntensity: .35 });
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 - .6, 1.2), sm); sg.position.set(cx, 3.8, zf + out * .12); sg.rotation.y = out > 0 ? 0 : Math.PI; scene.add(sg); TOWN.shops.push(sm);
+  if (o.awn) {
+    const at = labelTex(256, 64, (g, ww, hh) => { for (let x = 0; x < ww; x += 32) { g.fillStyle = '#' + o.awn[(x / 32) % 2].toString(16).padStart(6, '0'); g.fillRect(x, 0, 32, hh); } });
+    at.wrapS = THREE.RepeatWrapping; at.repeat.set((x1 - x0) / 2.5, 1);
+    const a = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 - .2, 1.2), new THREE.MeshStandardMaterial({ map: at, roughness: .9, side: THREE.DoubleSide })); a.position.set(cx, 3.05, zf + out * .5); a.rotation.x = out > 0 ? -1.1 : 1.1; if (out < 0) a.rotation.y = Math.PI; a.castShadow = true; scene.add(a);
+  }
+  // 蛍光灯
+  const tubeM = M({ color: 0xffffff, emissive: 0xeef4ff, ei: 1.6 });
+  for (const xx of [x0 + 2, cx, x1 - 2]) for (let k = 0; k < 3; k++) { const z = zf + dir * (1.6 + k * 2.8); box(xx - .6, xx + .6, CH - .06, CH - .02, z - .05, z + .05, tubeM, { col: false, cast: false }); }
+  for (const k of [0, 1]) { const L = new THREE.PointLight(0xe8f0ff, 3.2, 9, 1.4); L.position.set(cx, CH - .3, zf + dir * (2.2 + k * 4)); scene.add(L); }
+  const glow = new THREE.PointLight(0x8060ff, 1.4, 5, 1.6); glow.position.set(cx - .5, 1.3, zf + dir * 4.2); scene.add(glow);
+  // 筐体の配置
+  const AT = [['shoot', 'STAR BLASTER', '#2848c8'], ['mahjong', '麻雀 夜桜', '#c82868'], ['puzzle', 'COLUMN DROP', '#28a848'], ['quiz', 'クイズ雑学王', '#2868c8'], ['race', 'ROAD FEVER', '#d86018'], ['puzzle', 'COLUMN DROP', '#28a848']];
+  const mkAtt = (i) => { const a = attractScreen(AT[i][0], 31 + i * 7); const m = arcCRT(a.tex, null); ARC.att.push({ a, m }); return m; };
+  // 西の壁ぞい（遊ぶ人は東を向く）
+  [-1.9, -2.8, -3.7, -4.6].forEach((dz, i) => { const c = arcCab(x0 + .75, zf + dz * -dir, Math.PI / 2, mkAtt(i), AT[i][1], AT[i][2]); c.kind = AT[i][0]; });
+  // 対戦台（背中あわせ）。手前が自分の台、奥が向こう側
+  FG.crt = arcCRT(FG.rt.texture, FG.hudTex); FG.crt2 = arcCRT(FG.rt.texture, FG.hudTex);
+  const vx = cx - .3, vz = zf + dir * 4.2;
+  ARC.vs1 = arcCab(vx, vz, out > 0 ? 0 : Math.PI, FG.crt, 'FIGHTING EDGE 2', '#c82020');
+  ARC.vs2 = arcCab(vx, vz + dir * 1.0, out > 0 ? Math.PI : 0, FG.crt2, 'FIGHTING EDGE 2', '#c82020');
+  // もう一組（デモ画面だけ）
+  arcCab(vx + 1.6, vz, out > 0 ? 0 : Math.PI, mkAtt(4), AT[4][1], AT[4][2]); arcCab(vx + 1.6, vz + dir * 1.0, out > 0 ? Math.PI : 0, mkAtt(5), AT[5][1], AT[5][2]);
+  // クレーンゲーム（入口の右）
+  const kx0 = x1 - 1.35, kx1 = x1 - .3, kz0 = zf + dir * .5, kz1 = zf + dir * 1.6;
+  box(kx0, kx1, SW_Y, .9, kz0, kz1, M({ color: 0xe84080, rough: .4 }));
+  box(kx0 + .03, kx1 - .03, .9, 1.95, kz0 + dir * .03, kz1 - dir * .03, M({ color: 0xc0e0ff, rough: .05, metal: .2, transparent: true, opacity: .25 }), { col: false, cast: false });
+  box(kx0, kx1, 1.95, 2.25, kz0, kz1, M({ color: 0xffffff, emissive: 0xffe0f0, ei: 1.2 }), { col: false });
+  addCol(kx0, kx1, 0, 2.25, kz0, kz1);
+  const pr = mulberry32(77); for (let i = 0; i < 14; i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(.09 + pr() * .05, 10, 8), M({ color: [0xf0c040, 0x60a0f0, 0xf06080, 0xffffff, 0x80d060][i % 5], rough: .9 })); p.position.set(lerp(kx0 + .15, kx1 - .15, pr()), 1.0 + pr() * .15, lerp(kz0, kz1, .2 + pr() * .6)); p.scale.set(1, .8, 1); scene.add(p); }
+  const claw = new THREE.Mesh(new THREE.ConeGeometry(.08, .14, 3), M({ color: 0xc0c0c0, metal: .8, rough: .3 })); claw.position.set((kx0 + kx1) / 2, 1.75, (kz0 + kz1) / 2); claw.rotation.x = Math.PI; scene.add(claw); ARC.claw = claw;
+  hitProxy(kx0, kx1, .9, 1.95, Math.min(kz0, kz1), Math.max(kz0, kz1), { label: () => 'クレーンゲームを見る', act: () => G.thought(pick(['黄色いクマのぬいぐるみ。アームが、いかにも弱そうだ。', '「1回100円」と書いてある。ここだけ高い。', 'ぬいぐるみの山の奥に、なぜか目覚まし時計が埋まっている。'])) });
+  // 両替機と自販機（東の壁）
+  const rz = zf + dir * 3.2; box(x1 - .55, x1 - .2, SW_Y, 1.5, rz - .3, rz + .3, M({ color: 0x3a5a9a, rough: .4 }));
+  const ry2 = labelTex(128, 128, (g, w, h) => { g.fillStyle = '#3a5a9a'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = `bold 26px ${GOTH}`; g.textAlign = 'center'; g.fillText('両替機', 64, 40); g.font = `16px ${GOTH}`; g.fillText('千円札→100円', 64, 74); g.fillStyle = '#ffd040'; g.fillRect(34, 92, 60, 20); });
+  decal(ry2, .5, .5, new V3(x1 - .56, 1.1, rz), -Math.PI / 2);
+  hitProxy(x1 - .6, x1 - .2, .6, 1.5, rz - .3, rz + .3, { label: () => '両替機', act: () => G.thought('千円札なんて持っていない。……小銭は、あと' + G.yen + '円。') });
+  const vz2 = zA + .9; box(x1 - .95, x1 - .2, SW_Y, 1.85, vz2 - .4, vz2 + .4, M({ color: 0xc02020, rough: .4 }));
+  const vt = labelTex(256, 256, (g, w, h) => { g.fillStyle = '#e8e8e0'; g.fillRect(0, 0, w, h); for (let i = 0; i < 12; i++) { g.fillStyle = ['#c22', '#26c', '#e92', '#2a4', '#fff', '#444'][i % 6]; g.fillRect(14 + (i % 6) * 38, 20 + Math.floor(i / 6) * 90, 28, 60); g.fillStyle = '#222'; g.font = `12px ${GOTH}`; g.fillText('110', 18 + (i % 6) * 38, 96 + Math.floor(i / 6) * 90); } });
+  decal(vt, .62, .7, new V3(x1 - .96, 1.35, vz2), -Math.PI / 2, { emissive: 0xffffff, ei: .6 });
+  hitProxy(x1 - 1.0, x1 - .2, .4, 1.85, vz2 - .4, vz2 + .4, { label: () => 'ジュースを買う（110円）', act: () => { if (G.yen < 110) { G.thought('110円に、足りない。'); return; } G.yen -= 110; SFX.juice && SFX.juice(new V3(x1 - .9, .5, vz2)); G.thought('ガコン。……ゲーセンの自販機のジュースは、なぜか少しぬるい。（のこり' + G.yen + '円）'); } });
+  // 奥の壁：注意書き
+  const warn = labelTex(512, 256, (g, w, h) => { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c00'; g.lineWidth = 8; g.strokeRect(8, 8, w - 16, h - 16); g.fillStyle = '#c00'; g.font = `bold 34px ${GOTH}`; g.textAlign = 'center'; g.fillText('お客様へ', w / 2, 60); g.fillStyle = '#111'; g.font = `bold 26px ${GOTH}`; g.fillText('16歳未満の方は', w / 2, 112); g.fillText('午後6時以降の入場を', w / 2, 150); g.fillText('お断りいたします', w / 2, 188); g.font = `18px ${GOTH}`; g.fillText('ゲームコーナー ハロー 店長', w / 2, 232); });
+  decal(warn, .9, .45, new V3(cx - 1.6, 1.8, zA + .24), 0);
+  interactable(decal(labelTex(256, 128, (g, w, h) => { g.fillStyle = '#ffe020'; g.fillRect(0, 0, w, h); g.fillStyle = '#111'; g.font = `bold 28px ${GOTH}`; g.textAlign = 'center'; g.fillText('台パン禁止', w / 2, 52); g.font = `20px ${GOTH}`; g.fillText('台をたたかないでください', w / 2, 96); }), .6, .3, new V3(cx + .6, 1.9, zA + .24), 0), { label: () => '貼り紙を読む', act: () => G.thought('「台パン禁止」。紙の端が、何度も貼り直されている。') });
+  const door = M({ color: 0x5a5a62, rough: .5, metal: .3 }); box(x0 + .5, x0 + 1.4, SW_Y, 2.1, zA + .2, zA + .26, door, { col: false });
+  decal(labelTex(256, 64, (g, w, h) => { g.fillStyle = '#eee'; g.fillRect(0, 0, w, h); g.fillStyle = '#222'; g.font = `bold 30px ${GOTH}`; g.textAlign = 'center'; g.fillText('STAFF ONLY', w / 2, 44); }), .5, .13, new V3(x0 + .95, 1.7, zA + .27), 0);
+  // 灰皿スタンドとベンチ（入口の左）
+  const ash = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .7, 12), M({ color: 0x8a8a8a, metal: .7, rough: .3 })); ash.position.set(x0 + .6, SW_Y + .35, zf + dir * .6); scene.add(ash);
+  box(x0 + .3, x0 + 1.5, SW_Y, SW_Y + .42, zf + dir * 1.0, zf + dir * 1.35, M({ color: 0x3a6aa8, rough: .5 }));
+}
+
+// ---- 不良たち
+function buildYankees() {
+  const gakuran = M({ color: 0x16171d, rough: .85 }), white = M({ color: 0xeeeeea, rough: .9 }), sandal = M({ color: 0x222222, rough: .7 }), sneak = M({ color: 0xd8d8d0, rough: .7 });
+  const blond = M({ color: 0xc8a050, rough: .7 }), brown = M({ color: 0x5a3018, rough: .7 });
+  const mk = (o, hairM, pomp) => { const k = makeKid({ shirt: o.shirt, shorts: gakuran, skinMat: MT.skin, scale: 1.08, pants: gakuran, shoes: o.shoes });
+    k.head.traverse(m => { if (m.isMesh && m.material === MT.hair && hairM) m.material = hairM; });
+    if (pomp) { const p = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), hairM || MT.hair); p.scale.set(1.2, .9, 1.6); p.position.set(0, .1, .07); k.head.add(p); }
+    scene.add(k.root); return k; };
+  YAN.a = mk({ shirt: white, shoes: sandal }, blond, true);
+  YAN.b = mk({ shirt: gakuran, shoes: sneak }, brown, false);
+  YAN.c = mk({ shirt: white, shoes: sneak }, null, true);
+  const B = TOWN.arcBox, zf = B.z1;
+  YAN.a.root.position.set(B.x0 + 1.0, SW_Y, zf + .9); YAN.b.root.position.set(B.x0 + 1.9, SW_Y, zf + 1.35);
+  for (const [k, o] of [[YAN.a, YAN.b], [YAN.b, YAN.a]]) { k.squat(); const d = new V3().subVectors(o.root.position, k.root.position); k.root.rotation.y = Math.atan2(d.x, d.z) + (k === YAN.a ? .7 : -.5); k.baseRy = k.root.rotation.y; const p = k.root.position; addCol(p.x - .3, p.x + .3, 0, 1, p.z - .3, p.z + .3); }
+  // 中の一人（だいたい7割の確率でいる）
+  YAN.cIn = Math.random() < .7;
+  const sp = ARC.vs2.seatPos; YAN.c.root.position.set(sp.x, SW_Y, sp.z); YAN.c.root.rotation.y = ARC.vs2.ry + Math.PI; YAN.c.sitChair(); YAN.c.root.visible = YAN.cIn;
+  if (YAN.cIn) addCol(sp.x - .25, sp.x + .25, 0, 1.4, sp.z - .25, sp.z + .25);
+  for (const k of [YAN.a, YAN.b]) for (const m of [k.body.children[0], k.head.children[0]]) interactable(m, { label: () => '話しかける', act: () => yanAsk() });
+  interactable(YAN.c.body.children[0], { label: () => YAN.cIn ? '話しかける' : '', act: () => { const l = pick(YAN_IN.slice(0, 2)); yanLine(l[0], l[1]); yanLookAt(YAN.c, 1); } });
+}
+function yanAsk() {
+  if (ARC.talking) return; const i = Math.min(ARC.asked = (ARC.asked || 0) + 1, YAN_ASK.length) - 1, [who, t] = YAN_ASK[i];
+  yanLine(who, t); setTimeout(() => G.thought(i < 2 ? '……目を合わせないようにした。' : '……早く、ここから離れたい。'), 2600);
+}
+function yanLookAt(k, a) { k.lookAmt = a; }
+// 首をこちらへ向ける（なめらかに）
+function yanHead(k, dt) {
+  const p = k.root.position, d = new V3().subVectors(camera.position, p), want = (k.lookAmt || 0) > 0 ? Math.atan2(d.x, d.z) - k.root.rotation.y : 0;
+  let a = ((want + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; a = clamp(a, -1.2, 1.2);
+  k.head.rotation.y = lerp(k.head.rotation.y, a * (k.lookAmt || 0), 1 - Math.exp(-dt * 5)); k.head.rotation.x = lerp(k.head.rotation.x, (k.lookAmt || 0) * -.15 + .1, 1 - Math.exp(-dt * 4));
+}
+async function yanChat() {
+  ARC.talking = true; const conv = pick(YAN_TALK);
+  for (const [who, t] of conv) {
+    if (ARC.stare > 0) break; const near = camera.position.distanceTo(YAN.a.root.position) < 7 && G.zone === 'out';
+    const k = who === 'yan1' ? YAN.a : YAN.b; k.head.rotation.x = .2;
+    const d = await yanLine(who, t, { sub: near, far: true }); await wait(Math.max(1.2, (d || t.length * .12) + .5));
+  }
+  ARC.talking = false;
+}
+function arcVoicePos(who) {
+  if (who === 'yan1' && YAN.a) return [YAN.a.root.position.clone().add(new V3(0, .9, 0)), 'out'];
+  if (who === 'yan2' && YAN.b) return [YAN.b.root.position.clone().add(new V3(0, .9, 0)), 'out'];
+  if (who === 'yan3' && YAN.c) return [YAN.c.root.position.clone().add(new V3(0, 1.1, 0)), 'arcade'];
+  if (who === 'fgann' && ARC.vs1) return [ARC.vs1.scr.getWorldPosition(new V3()), 'arcade'];
+  return null;
+}
+
+// ---- 対戦台にすわって遊ぶ
+function arcSit() {
+  if (G.arcSeat) return; G.arcSeat = true; const sp = ARC.vs1.seatPos;
+  P.pos.set(sp.x, SW_Y, sp.z); P.yaw = ARC.vs1.ry; P.pitch = -.12;
+  ARC.seatCam = new V3(sp.x, SW_Y + 1.16, sp.z - Math.cos(ARC.vs1.ry) * .05);
+  if (!G.flags.arcFirst) { G.flags.arcFirst = true; G.thought('丸いすに座った。レバーが少し、べたべたしている。'); }
+  arcCoin();
+}
+function arcCoin() {
+  if (FG.playing && FG.state !== 'end') return;
+  if (G.yen < 50) { G.thought('もう50円玉がない。……のこり' + G.yen + '円。'); return; }
+  G.yen -= 50; arcCoinSfx(ARC.vs1.scr.getWorldPosition(new V3()));
+  FG.side = 0; FG.playing = true; FG.loud = true; FG.vsMan = false; FG.challenger = false; FG.onEnd = arcOnEnd; fgReset('cpu');
+  // 奥の不良が乱入してくる
+  if (YAN.cIn && Math.random() < (ARC.challenged ? .45 : .8)) { const id = ARC.chal = (ARC.chal || 0) + 1; setTimeout(() => { if (ARC.chal !== id || !FG.playing || !G.arcSeat || FG.state === 'end') return; arcCoinSfx(ARC.vs2.scr.getWorldPosition(new V3())); FG.challenger = true; fgSay('ニュー、チャレンジャー！'); setTimeout(() => { if (!FG.playing) return; FG.challenger = false; FG.vsMan = true; ARC.challenged = true; FG.onEnd = arcOnEnd; fgReset('vs'); }, 2200); }, 3500 + Math.random() * 5000); }
+}
+function arcOnEnd(res) {
+  FG.playing = false; const won = res.winner === FG.side;
+  if (FG.vsMan) {
+    if (won && Math.random() < .65) { arcDaipan(); setTimeout(() => yanLine('yan3', '……チッ。', { label: '向こうの台' }), 500); setTimeout(() => G.thought('……向こう側から、台をたたく音がした。'), 2400); }
+    else if (won) setTimeout(() => yanLine('yan3', '……今のなしな。', { label: '向こうの台' }), 600);
+    else setTimeout(() => yanLine('yan3', pick(['……よえーな。', '……出直してこいよ。']), { label: '向こうの台' }), 600);
+  } else if (!won) setTimeout(() => G.thought(pick(['……CPUにも勝てない。', '……50円が消えた。'])), 800);
+  else setTimeout(() => G.thought('……勝った。でも、一人用はここで終わり。'), 800);
+  FG.vsMan = false;
+}
+function arcStand() { G.arcSeat = false; FG.playing = false; FG.loud = false; ARC.chal = 0; const sp = ARC.vs1.seatPos; P.pos.set(sp.x, SW_Y, sp.z + Math.cos(ARC.vs1.ry) * .45); }
+function arcDaipan() {
+  ARC.shake = .45; ARC.joltT = .5; const p = ARC.vs2.scr.getWorldPosition(new V3());
+  if (!AU.ready) return; SFX.at(p, 'arcade', d => { const t = now(); const n = oneNoise('pink', t, .35), lp = filt('lowpass', 420), g = gainN(0); chain(n, lp, g, d); env(g, t, .002, 2.6, .3); const o = osc('sine', 70), go = gainN(0); o.connect(go); go.connect(d); env(go, t, .002, 1.4, .25); o.start(t); o.stop(t + .4); for (const [f, g0] of [[880, .12], [1320, .08], [2210, .05]]) { const r = osc('square', f), gr = gainN(0); r.connect(gr); gr.connect(d); env(gr, t + .01, .002, g0, .18); r.start(t); r.stop(t + .3); } });
+}
+function arcCoinSfx(p) { if (!AU.ready) return; SFX.at(p, 'arcade', d => { const t = now(); for (const [dt, f] of [[0, 2600], [.07, 3400], [.18, 1200]]) { const o = osc(dt < .1 ? 'sine' : 'triangle', f), g = gainN(0); o.connect(g); g.connect(d); env(g, t + dt, .002, .25, dt < .1 ? .12 : .3); o.start(t + dt); o.stop(t + dt + .4); } }); }
+// ---- ゲーセンの音（いくつもの台のデモ音が重なる）
+function arcadeAmbience() {
+  const B = TOWN.arcBox, c = new V3((B.x0 + B.x1) / 2, 1.3, (B.z0 + B.z1) / 2);
+  ARC.src = mkSrc(c, 'arcade', .28, { ref: 3 }); const out = ARC.src.input;
+  FG.sfxSrc = mkSrc(ARC.vs1.scr.getWorldPosition(new V3()), 'arcade', .6, { ref: 1.2 }); FG.sfxOut = FG.sfxSrc.input;
+  const bass = [110, 110, 131, 147, 110, 110, 165, 147], mel = [440, 523, 587, 659, 784, 659, 587, 523, 494, 587, 659, 880];
+  let next = now() + .5, step = 0;
+  setInterval(() => { if (!AU.ready || !ARC.src) return; while (next < now() + .3) { const t = next;
+    if (step % 2 === 0) { const o = osc('square', bass[(step / 2) % 8]), g = gainN(0), lp = filt('lowpass', 900); o.connect(lp); lp.connect(g); g.connect(out); env(g, t, .005, .05, .15); o.start(t); o.stop(t + .2); }
+    if (Math.random() < .4) { const o = osc('square', mel[Math.floor(Math.random() * mel.length)] * (Math.random() < .3 ? 2 : 1)), g = gainN(0); o.connect(g); g.connect(out); env(g, t, .003, .025, .1); o.start(t); o.stop(t + .14); }
+    if (Math.random() < .03) { const n = oneNoise('white', t, .5), lp = filt('lowpass', 1400), g = gainN(0); chain(n, lp, g, out); env(g, t, .005, .18, .45); }
+    if (Math.random() < .015) for (let i = 0; i < 5; i++) { const o = osc('square', 1046 * Math.pow(1.26, i)), g = gainN(0); o.connect(g); g.connect(out); env(g, t + i * .05, .002, .03, .06); o.start(t + i * .05); o.stop(t + i * .05 + .1); }
+    step++; next += .125; } }, 60);
+  const hm = mkSrc(new V3(c.x, 2.9, c.z), 'arcade', .05, { ref: 2 }); hum(hm, [['sine', 100, .05], ['noise', 4000, .02]]);
+}
+
+function arcadeInit() { G.yen ??= 500; buildYankees(); addEventListener('keydown', e => { if (!G.arcSeat || CHAT.open) return; if (e.code === 'KeyJ') FG.pressP = true; if (e.code === 'KeyK') FG.pressK = true; if (e.code === 'Space') { e.preventDefault(); arcCoin(); } });
+  const sp = ARC.vs1.seatPos; hitProxy(sp.x - .25, sp.x + .25, SW_Y, SW_Y + .9, sp.z - .25, sp.z + .25, { label: () => G.arcSeat ? '' : 'すわって遊ぶ（50円）', act: () => arcSit() });
+  hitProxy(ARC.vs1.x - .35, ARC.vs1.x + .35, SW_Y + 1.0, SW_Y + 1.45, ARC.vs1.z - .1, ARC.vs1.z + .3, { label: () => G.arcSeat ? '' : '画面を見る', act: () => G.thought('「FIGHTING EDGE 2」。ポリゴンの二人が、石の舞台で殴りあっている。') });
+}
+function arcadeUpdate(dt) {
+  if (!TOWN.arcBox) return; const B = TOWN.arcBox, cpos = camera.position, cx = (B.x0 + B.x1) / 2, cz = (B.z0 + B.z1) / 2, dist = Math.hypot(cpos.x - cx, cpos.z - cz);
+  if (!ARC.ambOn && AU.ready) { ARC.ambOn = true; arcadeAmbience(); }
+  ARC.shake = Math.max(0, ARC.shake - dt); ARC.joltT = Math.max(0, (ARC.joltT || 0) - dt);
+  if (ARC.vs2) ARC.vs2.grp.position.x = ARC.vs2.x + (ARC.shake > 0 ? (Math.random() - .5) * .02 : 0);
+  // 画面（近いときだけ動かす）
+  if (dist < 18 && cpos.y > -1) {
+    ARC.acc += dt; if (ARC.acc > 1 / 12) { for (const a of ARC.att) a.a.draw(ARC.acc); ARC.acc = 0; }
+    ARC.fgAcc += dt; if (ARC.fgAcc > 1 / 30) { fgUpdate(ARC.fgAcc); fgRender(); ARC.fgAcc = 0; }
+    for (const m of [FG.crt, FG.crt2, ...ARC.att.map(a => a.m)]) { m.uniforms.time.value = T; }
+    FG.crt.uniforms.jolt.value = FG.crt2.uniforms.jolt.value = ARC.joltT > 0 ? ARC.joltT : 0;
+  }
+  if (ARC.claw) ARC.claw.position.x = (B.x1 - .825) + Math.sin(T * .4) * .3;
+  // 外の二人：おしゃべりと、近づくと黙ってにらむ
+  const dA = Math.min(cpos.distanceTo(YAN.a.root.position), cpos.distanceTo(YAN.b.root.position));
+  if (dA < 2.8 && G.zone === 'out') { ARC.stare += dt; if (ARC.stare > .4 && !ARC.stareOn) { ARC.stareOn = true; yanLookAt(YAN.a, 1); yanLookAt(YAN.b, 1); if (!G.flags.yanFirst) { G.flags.yanFirst = true; setTimeout(() => G.thought('学ランの……たぶん和泉南中の人たちだ。……目を合わせないようにした。'), 400); } }
+    if (ARC.stare > 4.5 && ARC.stared < YAN_STARE.length && !ARC.talking) { const [who, t] = YAN_STARE[ARC.stared++]; ARC.stare = 1.5; yanLine(who, t); } }
+  else { if (ARC.stareOn && dA > 3.6) { ARC.stareOn = false; ARC.stare = 0; yanLookAt(YAN.a, 0); yanLookAt(YAN.b, 0); ARC.chatT = 3 + Math.random() * 3; } }
+  if (!ARC.stareOn && !ARC.talking && dA < 30) { ARC.chatT -= dt; if (ARC.chatT <= 0) { ARC.chatT = 9 + Math.random() * 12; yanChat(); } }
+  for (const k of [YAN.a, YAN.b, YAN.c]) yanHead(k, dt);
+  // 中の一人：うしろからじっと見ていると
+  if (YAN.cIn) {
+    const sp = YAN.c.root.position, d = cpos.distanceTo(new V3(sp.x, cpos.y, sp.z)); const fw = new V3(); camera.getWorldDirection(fw);
+    const to = new V3(sp.x - cpos.x, 0, sp.z - cpos.z).normalize(), ry = YAN.c.root.rotation.y, behind = (cpos.x - sp.x) * Math.sin(ry) + (cpos.z - sp.z) * Math.cos(ry) < 0;
+    ARC.watchCD = Math.max(0, ARC.watchCD - dt);
+    if (!G.arcSeat && d < 2.2 && behind && fw.x * to.x + fw.z * to.z > .8) { ARC.watchT += dt; if (ARC.watchT > 2.2 && ARC.watchCD <= 0) { ARC.watchT = 0; ARC.watchCD = 25; const n = ARC.watched = (ARC.watched || 0) + 1; yanLookAt(YAN.c, 1); yanLine('yan3', n === 1 ? '……なに見てんだよ。' : '……あっち行けよ。'); setTimeout(() => yanLookAt(YAN.c, 0), 3500); } }
+    else ARC.watchT = Math.max(0, ARC.watchT - dt);
+    // 遊んでいるふうに手を動かす
+    YAN.c.aR.el.rotation.x = -.4 + (Math.sin(T * 9) > .6 ? -.08 : 0); YAN.c.aL.sh.rotation.z = .2 + Math.sin(T * 2.3) * .05;
+  }
+}
+// 座っているときの操作説明
+function arcPadUI() { UI.pad.style.opacity = 1; UI.pad.innerHTML = (FG.playing && FG.state !== 'end' ? 'A/D 移動 ／ J パンチ ／ K キック ／ L ガード<br>' : 'Space 50円を入れる<br>') + 'E 立ち上がる　（のこり' + G.yen + '円）'; UI.prompt.style.opacity = 0; UI.cross.className = ''; }
+
+// ============================================================
+// 格闘ゲーム『FIGHTING EDGE 2』（架空のメーカーのポリゴン格闘ゲーム）
+// 別のシーンを描いて、ゲーセンの筐体の画面に映す
+// ============================================================
+const FG = { W: 512, H: 384, t: 0, mode: 'attract', state: 'idle', msg: '', msgT: 0, side: null, vsMan: false, shake: 0 };
+const FG_NAMES = ['ゴウ', 'レイ'];
+// 実況の声（tools/gen_voice.js が拾う）と、画面に出す英語
+const FG_VO = [['fgann', 'ラウンド、ワン。'], ['fgann', 'ファイト！'], ['fgann', 'ケー、オー！'], ['fgann', 'リングアウト！'], ['fgann', 'タイム、アップ！'], ['fgann', 'ユー、ウィン。'], ['fgann', 'ユー、ルーズ。'], ['fgann', 'ニュー、チャレンジャー！']];
+const FG_EN = { 'ラウンド ワン': 'ROUND 1', 'ファイト！': 'FIGHT!', 'ケー オー！': 'K.O.', 'リングアウト！': 'RING OUT!', 'タイム アップ！': 'TIME UP', 'ユー ウィン': 'YOU WIN', 'ユー ルーズ': 'YOU LOSE', 'ニュー チャレンジャー！': 'NEW CHALLENGER!' };
+function fgInit() {
+  const S = FG.scene = new THREE.Scene(); FG.scene.background = new THREE.Color(0x7a9ad8);
+  FG.cam = new THREE.PerspectiveCamera(38, FG.W / FG.H, .1, 400);
+  S.add(new THREE.HemisphereLight(0xc8d8ff, 0x4a4030, 1.4)); const d = new THREE.DirectionalLight(0xfff0d8, 2.6); d.position.set(4, 10, 6); S.add(d);
+  // 空（上から下へのグラデーション）と遠くの山
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(180, 16, 10), new THREE.MeshBasicMaterial({ side: THREE.BackSide, vertexColors: true }));
+  const cols = []; const pa = sky.geometry.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i) / 180, c = new THREE.Color().lerpColors(new THREE.Color(0xe8c8a0), new THREE.Color(0x3a5ab8), Math.max(0, y) ** .6); cols.push(c.r, c.g, c.b); } sky.geometry.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); S.add(sky);
+  const mtM = new THREE.MeshLambertMaterial({ color: 0x4a5a7a, flatShading: true });
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, m = new THREE.Mesh(new THREE.ConeGeometry(18 + Math.random() * 14, 20 + Math.random() * 25, 5), mtM); m.position.set(Math.cos(a) * 120, 4, Math.sin(a) * 120 - 20); S.add(m); }
+  // リング（石の舞台）と水面
+  const ringM = new THREE.MeshLambertMaterial({ color: 0x9a9088, flatShading: true });
+  const ring = new THREE.Mesh(new THREE.BoxGeometry(12, .8, 12), ringM); ring.position.y = -.4; S.add(ring);
+  for (let i = -5; i <= 5; i += 2) for (let j = -5; j <= 5; j += 2) { const t = new THREE.Mesh(new THREE.BoxGeometry(1.96, .02, 1.96), new THREE.MeshLambertMaterial({ color: (i + j) % 4 === 0 ? 0xa8a098 : 0x8e867e })); t.position.set(i, .005, j); S.add(t); }
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x2a5a9a })); water.rotation.x = -Math.PI / 2; water.position.y = -1.4; S.add(water);
+  FG.f = [mkFighter(0), mkFighter(1)];
+  for (const f of FG.f) S.add(f.root);
+  FG.rt = new THREE.WebGLRenderTarget(FG.W, FG.H, { type: THREE.HalfFloatType });
+  // 画面の上に重ねる文字（体力ゲージ・時間・メッセージ）
+  const hc = document.createElement('canvas'); hc.width = FG.W; hc.height = FG.H; FG.hud = hc; FG.hg = hc.getContext('2d');
+  FG.hudTex = new THREE.CanvasTexture(hc); FG.hudTex.colorSpace = THREE.SRGBColorSpace;
+  fgReset('attract');
+}
+function mkFighter(k) {
+  const root = new THREE.Group(), C = k === 0 ? { top: 0xf0f0ea, pants: 0xf0f0ea, belt: 0x111111, skin: 0xd8a070, hair: 0x1a1a1a, band: 0xc82020 } : { top: 0xc82a2a, pants: 0x2a3a7a, belt: 0x2a2a2a, skin: 0xe0b088, hair: 0x6a3a1a, band: null };
+  const mat = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+  const B = (w, h, d, m, x, y, z, parent) => { const g = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); g.position.set(x, y, z); parent.add(g); return g; };
+  const J = (x, y, z, parent) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
+  const hips = J(0, 1.0, 0, root); B(.36, .2, .22, mat(C.pants), 0, 0, 0, hips); B(.38, .07, .24, mat(C.belt), 0, .1, 0, hips);
+  const chest = J(0, .12, 0, hips); B(.42, .42, .25, mat(C.top), 0, .24, 0, chest); B(.18, .1, .2, mat(C.skin), 0, .48, 0, chest);
+  const head = J(0, .58, 0, chest); const hd = new THREE.Mesh(new THREE.IcosahedronGeometry(.13, 0), mat(C.skin)); hd.scale.set(1, 1.15, 1.05); head.add(hd);
+  const hair = new THREE.Mesh(new THREE.IcosahedronGeometry(.135, 0), mat(C.hair)); hair.scale.set(1.02, .7, 1.08); hair.position.y = .07; head.add(hair);
+  if (C.band) B(.28, .04, .28, mat(C.band), 0, .05, 0, head);
+  const arm = s => { const sh = J(s * .27, .42, 0, chest); B(.12, .3, .13, mat(k === 0 ? C.top : C.top), 0, -.15, 0, sh); const el = J(0, -.3, 0, sh); B(.1, .28, .1, mat(C.skin), 0, -.14, 0, el); B(.12, .11, .12, mat(C.skin), 0, -.3, 0, el); return { sh, el }; };
+  const leg = s => { const hp = J(s * .11, -.08, 0, hips); B(.15, .44, .16, mat(C.pants), 0, -.22, 0, hp); const kn = J(0, -.44, 0, hp); B(.13, .44, .14, mat(C.pants), 0, -.22, 0, kn); B(.13, .07, .26, mat(k === 0 ? C.skin : 0x222222), 0, -.46, .05, kn); return { hp, kn }; };
+  const f = { root, hips, chest, head, aL: arm(-1), aR: arm(1), lL: leg(-1), lR: leg(1), k };
+  root.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  return f;
+}
+// 姿勢（関節の目標角度）
+const POSES = {
+  idle: { hipsY: 1.0, chest: [.1, .5], lL: [-.35, .45], lR: [.25, .35], aL: [-.9, .3, -1.6], aR: [-.6, -.2, -1.9] },
+  walk: { hipsY: 1.0, chest: [.1, .5], lL: [-.2, .3], lR: [.1, .3], aL: [-.9, .3, -1.6], aR: [-.6, -.2, -1.9] },
+  punch: { hipsY: .98, chest: [.15, .05], lL: [-.5, .3], lR: [.4, .3], aL: [-1.5, 0, -.05], aR: [-.5, -.2, -2.0] },
+  kick: { hipsY: 1.02, chest: [-.25, .3], lL: [-1.55, .05], lR: [.15, .15], aL: [-.5, .5, -1.4], aR: [-.3, -.5, -1.4] },
+  guard: { hipsY: .92, chest: [.2, .3], lL: [-.45, .6], lR: [.35, .5], aL: [-1.6, .5, -2.4], aR: [-1.5, -.4, -2.5] },
+  hit: { hipsY: .96, chest: [-.45, .9], lL: [-.1, .3], lR: [.3, .4], aL: [-.3, .6, -.6], aR: [-.2, -.6, -.6] },
+  down: { hipsY: .2, chest: [-1.4, 0], lL: [-.3, .2], lR: [-.2, .1], aL: [-2.6, .5, -.2], aR: [-2.6, -.5, -.2] },
+  win: { hipsY: 1.0, chest: [-.05, 0], lL: [-.1, .05], lR: [.1, .05], aL: [-.2, .3, -.3], aR: [-2.8, -.2, -.3] },
+};
+function fgPose(f, name, dt, k = 14) {
+  const p = POSES[name], a = 1 - Math.exp(-dt * k), L = (o, prop, v) => { o[prop] = lerp(o[prop], v, a); };
+  L(f.hips.position, 'y', p.hipsY); L(f.chest.rotation, 'x', p.chest[0]); L(f.chest.rotation, 'y', p.chest[1] * (f.face > 0 ? 1 : 1));
+  L(f.lL.hp.rotation, 'x', p.lL[0]); L(f.lL.kn.rotation, 'x', p.lL[1]); L(f.lR.hp.rotation, 'x', p.lR[0]); L(f.lR.kn.rotation, 'x', p.lR[1]);
+  L(f.aL.sh.rotation, 'x', p.aL[0]); L(f.aL.sh.rotation, 'z', p.aL[1]); L(f.aL.el.rotation, 'x', p.aL[2]); L(f.aR.sh.rotation, 'x', p.aR[0]); L(f.aR.sh.rotation, 'z', p.aR[1]); L(f.aR.el.rotation, 'x', p.aR[2]);
+  L(f.hips.rotation, 'x', name === 'down' ? -1.45 : 0);
+}
+function fgReset(mode) {
+  FG.mode = mode; FG.state = 'intro'; FG.t = 0; FG.timer = 30; FG.result = null;
+  FG.f.forEach((f, i) => { Object.assign(f, { x: i ? 1.4 : -1.4, y: 0, vx: 0, face: i ? -1 : 1, hp: 100, st: 'idle', st_t: 0, hitDone: false, guardT: 0, aiT: 0, out: false }); f.root.position.set(f.x, 0, 0); f.root.rotation.y = f.face > 0 ? Math.PI / 2 : -Math.PI / 2; });
+  if (mode !== 'attract') { fgSay('ラウンド、ワン。'); setTimeout(() => fgSay('ファイト！'), 1300); }
+}
+function fgSay(t) { FG.msg = t.replace(/、/g, ' ').replace('。', ''); FG.msgT = 1.2; if (FG.loud) sayLine('fgann', t); }
+const FG_MOVES = { punch: { dur: .34, a0: .08, a1: .17, range: 1.05, dmg: 7, stun: .3, kb: 1.6 }, kick: { dur: .56, a0: .18, a1: .31, range: 1.4, dmg: 13, stun: .45, kb: 3.0 } };
+function fgAct(f, act) {
+  if (FG.state !== 'fight' || f.st === 'hit' || f.st === 'down' || FG_MOVES[f.st]) return;
+  if (FG_MOVES[act]) { f.st = act; f.st_t = 0; f.hitDone = false; fgSfx('swing'); }
+}
+function fgAI(f, o, dt, skill) {
+  f.aiT -= dt; const dist = Math.abs(o.x - f.x);
+  if (FG_MOVES[o.st] && dist < 1.6 && f.aiT < .1 && Math.random() < skill * .7) { f.wantGuard = .45; f.aiT = .3; }
+  if (f.wantGuard > 0) { f.wantGuard -= dt; return { guard: true }; }
+  if (f.aiT > 0) return { dir: f.aiDir || 0 };
+  f.aiT = .18 + Math.random() * .35; f.aiDir = 0;
+  if (dist > 1.25) f.aiDir = Math.sign(o.x - f.x);
+  else { const r = Math.random(); if (r < .35 + skill * .1) return { act: 'punch' }; if (r < .6) return { act: 'kick' }; if (r < .7) f.aiDir = -Math.sign(o.x - f.x); }
+  return { dir: f.aiDir };
+}
+function fgUpdate(dt) {
+  if (!FG.scene) return; FG.t += dt; FG.msgT = Math.max(0, FG.msgT - dt); FG.shake = Math.max(0, FG.shake - dt);
+  const [a, b] = FG.f;
+  if (FG.state === 'intro' && FG.t > (FG.mode === 'attract' ? .5 : 1.8)) FG.state = 'fight';
+  if (FG.state === 'fight') { FG.timer -= dt; if (FG.timer <= 0) { FG.timer = 0; fgFinish(a.hp === b.hp ? -1 : a.hp > b.hp ? 0 : 1, 'time'); } }
+  for (let i = 0; i < 2; i++) {
+    const f = FG.f[i], o = FG.f[1 - i];
+    let inp = {};
+    if (FG.state === 'fight') {
+      if (FG.side === i && FG.playing) { inp.dir = (KEYS.KeyD || KEYS.ArrowRight ? 1 : 0) - (KEYS.KeyA || KEYS.ArrowLeft ? 1 : 0); inp.guard = KEYS.KeyL || KEYS.KeyS; if (FG.pressP) { inp.act = 'punch'; } if (FG.pressK) inp.act = 'kick'; }
+      else inp = fgAI(f, o, dt, FG.mode === 'vs' && i !== FG.side ? .62 : .5);
+    }
+    f.st_t += dt;
+    if (inp.act) fgAct(f, inp.act);
+    const mv = FG_MOVES[f.st];
+    if (mv) { if (f.st_t > mv.dur) f.st = 'idle'; else if (!f.hitDone && f.st_t > mv.a0 && f.st_t < mv.a1 && Math.abs(o.x - f.x) < mv.range && o.st !== 'down') { f.hitDone = true; fgHit(f, o, mv); } }
+    else if (f.st === 'hit') { if (f.st_t > f.stun) f.st = 'idle'; }
+    else if (f.st === 'down' || f.st === 'win') { }
+    else if (FG.state === 'fight') { if (inp.guard) f.st = 'guard'; else if (inp.dir) { f.st = 'walk'; f.x += inp.dir * 2.0 * dt; } else f.st = 'idle'; }
+    // ノックバック・リングアウト
+    f.x += f.vx * dt; f.vx *= Math.exp(-dt * 6);
+    if (Math.abs(f.x) > 5.8 && !f.out && FG.state === 'fight') { f.out = true; f.st = 'down'; fgFinish(1 - i, 'out'); }
+    if (f.out) { f.y = Math.max(-1.5, f.y - dt * 4); f.x += Math.sign(f.x) * dt; }
+    f.face = Math.sign(o.x - f.x) || f.face;
+    fgPose(f, f.st === 'walk' ? 'walk' : (POSES[f.st] ? f.st : 'idle'), dt);
+    if (f.st === 'walk') { const s = Math.sin(FG.t * 12); f.lL.hp.rotation.x += s * .25 * dt * 10; f.lR.hp.rotation.x -= s * .25 * dt * 10; }
+  }
+  // 重ならないように
+  const gap = b.x - a.x, minG = .62; if (Math.abs(gap) < minG && !a.out && !b.out) { const push = (minG - Math.abs(gap)) / 2 * Math.sign(gap || 1); a.x -= push; b.x += push; }
+  for (const f of FG.f) { f.root.position.set(f.x, f.y, 0); f.root.rotation.y = f.face > 0 ? Math.PI / 2 : -Math.PI / 2; }
+  FG.pressP = FG.pressK = false;
+  // 試合が終わったら
+  if (FG.state === 'end') { FG.endT -= dt; if (FG.endT <= 0) { if (FG.onEnd) { const cb = FG.onEnd; FG.onEnd = null; cb(FG.result); } fgReset('attract'); FG.loud = false; } }
+  if (FG.mode === 'attract' && FG.state === 'end' && FG.endT <= 0) fgReset('attract');
+  // カメラ
+  const mid = (a.x + b.x) / 2, sep = Math.abs(a.x - b.x);
+  FG.cam.position.set(mid + Math.sin(FG.t * .2) * .6, 1.7 + (FG.shake ? (Math.random() - .5) * .1 : 0), 4.6 + sep * .55); FG.cam.lookAt(mid, 1.05, 0);
+  fgDrawHUD();
+}
+function fgHit(f, o, mv) {
+  const guarded = o.st === 'guard' && Math.sign(f.x - o.x) === o.face;
+  if (guarded) { o.vx = f.face * 1.0; fgSfx('block'); return; }
+  o.hp = Math.max(0, o.hp - mv.dmg); o.st = 'hit'; o.st_t = 0; o.stun = mv.stun; o.vx = f.face * mv.kb; fgSfx(mv === FG_MOVES.kick ? 'kick' : 'hit');
+  if (o.hp <= 0) { o.st = 'down'; fgFinish(FG.f.indexOf(f), 'ko'); }
+}
+function fgFinish(winner, how) {
+  if (FG.state === 'end') return; FG.state = 'end'; FG.endT = 4; FG.result = { winner, how };
+  if (winner >= 0) { FG.f[winner].st = 'win'; FG.f[winner].st_t = 0; }
+  fgSay(how === 'ko' ? 'ケー、オー！' : how === 'out' ? 'リングアウト！' : 'タイム、アップ！');
+  if (FG.side !== null && FG.playing && winner >= 0) setTimeout(() => fgSay(winner === FG.side ? 'ユー、ウィン。' : 'ユー、ルーズ。'), 1600);
+}
+function fgDrawHUD() {
+  const g = FG.hg, W = FG.W; g.clearRect(0, 0, W, FG.H);
+  if (FG.mode === 'attract' && !FG.loud) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 300, W, 50); g.fillStyle = Math.floor(FG.t * 2) % 2 ? '#fff' : '#ffd040'; g.font = 'bold 26px Arial,sans-serif'; g.textAlign = 'center'; g.fillText('INSERT COIN', W / 2, 334); g.font = 'bold 34px Impact,Arial,sans-serif'; g.fillStyle = '#ffe040'; g.strokeStyle = '#a02010'; g.lineWidth = 4; g.strokeText('FIGHTING EDGE 2', W / 2, 52); g.fillText('FIGHTING EDGE 2', W / 2, 52); g.textAlign = 'left'; FG.hudTex.needsUpdate = true; return; }
+  const [a, b] = FG.f;
+  for (const [f, x, al] of [[a, 20, 'left'], [b, W - 20, 'right']]) {
+    const w = 200, x0 = al === 'left' ? x : x - w; g.fillStyle = '#300'; g.fillRect(x0, 40, w, 16); g.fillStyle = f.hp > 30 ? '#ffd030' : '#ff4020'; const hw = w * f.hp / 100; g.fillRect(al === 'left' ? x0 + w - hw : x0, 40, hw, 16); g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(x0, 40, w, 16);
+    g.fillStyle = '#fff'; g.font = `bold 16px ${GOTH}`; g.textAlign = al; g.fillText(FG_NAMES[f.k], x, 74);
+  }
+  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = 'bold 30px Arial,sans-serif'; g.fillText(String(Math.ceil(FG.timer)).padStart(2, '0'), W / 2, 62);
+  if (FG.msgT > 0 || FG.state === 'end') { g.font = 'bold 50px Impact,Arial,sans-serif'; g.fillStyle = '#ffe040'; g.strokeStyle = '#a01010'; g.lineWidth = 5; const t = FG_EN[FG.msg] || FG.msg; g.strokeText(t, W / 2, 200); g.fillText(t, W / 2, 200); }
+  if (FG.challenger) { g.fillStyle = 'rgba(200,0,0,.6)'; g.fillRect(0, 230, W, 40); g.fillStyle = '#fff'; g.font = `bold 24px ${GOTH}`; g.fillText('挑戦者が乱入しました！', W / 2, 258); }
+  g.textAlign = 'left'; FG.hudTex.needsUpdate = true;
+}
+function fgSfx(k) {
+  if (!AU.ready || !FG.sfxOut) return; const t = now(), d = FG.sfxOut;
+  if (k === 'swing') { const n = oneNoise('white', t, .12), bp = filt('bandpass', 1800, .9), g = gainN(0); chain(n, bp, g, d); env(g, t, .01, .12, .1); }
+  if (k === 'hit' || k === 'kick') { const n = oneNoise('pink', t, .2), lp = filt('lowpass', k === 'kick' ? 900 : 1500), g = gainN(0); chain(n, lp, g, d); env(g, t, .002, k === 'kick' ? 1.2 : .8, .15); const o = osc('square', k === 'kick' ? 90 : 140), go = gainN(0); o.connect(go); go.connect(d); env(go, t, .002, .25, .12); o.start(t); o.stop(t + .2); FG.shake = .12; }
+  if (k === 'block') { const o = osc('square', 900), g = gainN(0); o.connect(g); g.connect(d); env(g, t, .001, .08, .06); o.start(t); o.stop(t + .1); }
+}
+function fgRender() { if (!FG.scene) return; renderer.setRenderTarget(FG.rt); renderer.render(FG.scene, FG.cam); renderer.setRenderTarget(null); }
 
 // ============================================================
 // エレベーター（共用廊下の東の突き当たり。1〜3階）
@@ -1869,12 +2357,13 @@ function thru(z) {
     case 'toilet': return DOORS.toilet.isOpen ? .8 : .22;
     case 'out': return DOORS.front.isOpen ? .6 : .07;
     case 'station': return .1;
+    case 'arcade': return .5;
     case 'store': return TOWN.superDoor && TOWN.superDoor.o > .5 ? .55 : .15;
   }
   return .05;
 }
 const DIRECT = { 'friend|out': .42, 'living|out': .09, 'brother|friend': .06, 'living|toilet': .1, 'brother|living': .08, 'friend|living': .05 };
-function trans(a, b) { if (a === b) return 1; if ((a === 'station' || a === 'store' || b === 'station' || b === 'store') && (a === 'out' || b === 'out')) return a === 'out' ? thru(b) : thru(a); const t = thru(a) * thru(b); const d = DIRECT[a + '|' + b] ?? DIRECT[b + '|' + a] ?? .02; return Math.min(1, Math.max(t, d)); }
+function trans(a, b) { if (a === b) return 1; if ((a === 'station' || a === 'store' || a === 'arcade' || b === 'station' || b === 'store' || b === 'arcade') && (a === 'out' || b === 'out')) return a === 'out' ? thru(b) : thru(a); const t = thru(a) * thru(b); const d = DIRECT[a + '|' + b] ?? DIRECT[b + '|' + a] ?? .02; return Math.min(1, Math.max(t, d)); }
 const _fw = new V3(), _up = new V3();
 function audioUpdate(camPos, zoneL) {
   if (!AU.ready) return; const L = AU.ctx.listener, t = now();
@@ -2782,6 +3271,7 @@ const G = {
       if (p.z < -8.65) return 'toilet'; return 'hall';
     }
     if (p.y < -1 && p.x > -77 && p.x < -55 && p.z < -58 && p.z > -86) return 'station';
+    const ab = TOWN.arcBox; if (ab && p.x > ab.x0 + .2 && p.x < ab.x1 - .2 && p.z > ab.z0 && p.z < ab.z1 && p.y < 3.2) return 'arcade';
     const sb = TOWN.superBox; if (sb && p.x > sb.x0 && p.x < sb.x1 && p.z > sb.z0 && p.z < sb.z1 - 0 && p.y < 3.4) return 'store';
     return 'out';
   },
@@ -2890,7 +3380,7 @@ Object.assign(G, G_EXT);
 addEventListener('keydown', e => {
   if (CHAT.open) return; KEYS[e.code] = true; if (!started) return;
   if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); openChat(); return; }
-  if (e.code === 'KeyE') { if (G.noticeOpen) { UI.notice.style.display = 'none'; G.noticeOpen = false; return; } if (G.seated && !CUR_IT) { G.stand(); return; } if (CUR_IT && !G.busy) { const it = CUR_IT.userData.it; if (it.act) it.act(); } }
+  if (e.code === 'KeyE') { if (G.noticeOpen) { UI.notice.style.display = 'none'; G.noticeOpen = false; return; } if (G.arcSeat) { arcStand(); return; } if (G.seated && !CUR_IT) { G.stand(); return; } if (CUR_IT && !G.busy) { const it = CUR_IT.userData.it; if (it.act) it.act(); } }
   if (e.code === 'KeyF' && G.seated && G.padOffer > 0 && !G.holdPad) { G.holdPad = true; RPG.mode = 'player'; G.padOffer = 0; G.friendSays('……ほら。', 1.6); }
   if (e.code === 'KeyQ' && G.holdPad) { G.holdPad = false; RPG.mode = 'ai'; G.friendSays(pick(['……おう。', '……うまいじゃん。', '……そこ、惜しかった。']), 2); }
   if (e.code === 'KeyT') { UI.watch.style.opacity = 1; clearTimeout(UI.wt); UI.wt = setTimeout(() => UI.watch.style.opacity = 0, 2500); }
@@ -2908,7 +3398,7 @@ addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; cam
 const ray = new THREE.Raycaster(); let CUR_IT = null;
 let expo = .8, hemiK = 1;
 function updatePlayer(dt) {
-  if (G.seated || G.busy || G.phase === 'end') { P.vel.set(0, 0, 0); return; }
+  if (G.seated || G.arcSeat || G.busy || G.phase === 'end') { P.vel.set(0, 0, 0); return; }
   const f = new V3(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)), r = new V3(-f.z, 0, f.x);
   const want = new V3(); if (KEYS.KeyW) want.add(f); if (KEYS.KeyS) want.sub(f); if (KEYS.KeyD) want.add(r); if (KEYS.KeyA) want.sub(r);
   const indoor = G.zone !== 'out', sp = (KEYS.ShiftLeft || KEYS.ShiftRight) && !indoor ? 3.3 : (indoor ? 1.25 : 1.7);
@@ -2927,6 +3417,7 @@ function updatePlayer(dt) {
 }
 function updateCamera() {
   if (G.seated) { camera.position.set(18.7, 2.95 + .78, -2.5); }
+  else if (G.arcSeat) { camera.position.copy(ARC.seatCam); if (ARC.shake > 0) camera.position.y += (Math.random() - .5) * .012; }
   else camera.position.set(P.pos.x, P.pos.y + P.eye + Math.sin(P.bob) * .022, P.pos.z);
   camera.rotation.set(P.pitch, P.yaw, Math.sin(P.bob * .5) * .004);
 }
@@ -2936,6 +3427,7 @@ function updateInteract() {
   for (const h of hits) { const it = h.object.userData.it; if (!it || !it.label) continue; const lab = it.label(); if (!lab) continue; if (segBlocked(camera.position, h.point)) break; CUR_IT = h.object; UI.prompt.innerHTML = `<b>E</b>${lab}`; break; }
   if (G.seated && !CUR_IT) UI.prompt.innerHTML = '<b>E</b>立ち上がる';
   UI.prompt.style.opacity = (CUR_IT || G.seated) && !G.busy ? 1 : 0; UI.cross.className = CUR_IT ? 'on' : '';
+  if (G.arcSeat) { arcPadUI(); return; }
   UI.pad.style.opacity = G.seated ? 1 : 0; UI.pad.innerHTML = G.holdPad ? 'WASD 移動 ／ Space こうげき<br>Q コントローラーを返す' : (G.padOffer > 0 ? 'F コントローラーを借りる' : '');
 }
 function updateLooks() {
@@ -3003,7 +3495,7 @@ function updateLights(t, dt) {
   LT.toilet.intensity = G.toiletLight ? 4.5 : 0; MT.bulb.emissive.set(G.toiletLight ? 0xffe0a0 : 0x000000); MT.bulb.emissiveIntensity = 3;
   LT.hall.intensity = G.hallLight ? 4 : 0; W.hallShade.material.emissive.set(G.hallLight ? 0x664a20 : 0x000000);
   // 室内外の明るさ（目の順応）
-  const z = G.zone, targetE = z === 'out' ? curTOD.expOut : z === 'hall' ? (G.hallLight ? 1.3 : 1.55) : z === 'friend' ? 1.25 : z === 'toilet' ? (G.toiletLight ? 1.2 : 2.4) : z === 'station' ? 1.2 : z === 'store' ? 1.0 : 1.5;
+  const z = G.zone, targetE = z === 'out' ? curTOD.expOut : z === 'hall' ? (G.hallLight ? 1.3 : 1.55) : z === 'friend' ? 1.25 : z === 'toilet' ? (G.toiletLight ? 1.2 : 2.4) : z === 'station' ? 1.2 : z === 'store' ? 1.0 : z === 'arcade' ? 1.25 : 1.5;
   expo = lerp(expo, targetE, 1 - Math.exp(-dt * (targetE > expo ? .9 : 2.2))); renderer.toneMappingExposure = expo;
   const hk = z === 'out' ? 1 : .045; hemiK = lerp(hemiK, hk, 1 - Math.exp(-dt * 3)); LT.hemi.intensity = LT.hemiBase * hemiK;
   LT.amb.intensity = z === 'out' ? .05 : .012;
@@ -3058,7 +3550,7 @@ async function loadBake() {
   const bin = Uint8Array.from(atob(A.bake_glb.split(',')[1]), ch => ch.charCodeAt(0)).buffer;
   const gltf = await new GLTFLoader().parseAsync(bin, '');
   const meta = A.bake_meta ? JSON.parse(A.bake_meta) : { day: 1, eve: 1 };
-  const lt = async src => { const img = new Image(); img.src = src; await img.decode(); const t = new THREE.Texture(img); t.needsUpdate = true; t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.channel = 1; return t; };
+  const lt = async src => { const img = new Image(); const ld = new Promise(r => { img.onload = () => setTimeout(r, 300); img.onerror = r; }); img.src = src; await Promise.race([img.decode().catch(() => { }), ld]); const t = new THREE.Texture(img); t.needsUpdate = true; t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; t.channel = 1; return t; };
   W.lm = { day: await lt(A.bake_day), eve: A.bake_eve ? await lt(A.bake_eve) : null, ao: A.bake_ao ? await lt(A.bake_ao) : null, meta };
   if (W.lm.ao) W.lm.ao.colorSpace = THREE.NoColorSpace;
   W.bakedMats = []; const LMI = Math.PI * .42;
@@ -3105,7 +3597,7 @@ $('title').addEventListener('click', async () => {
   UI.fadeText.textContent = '一九九七年　八月\n東京都杉並区　和泉'; UI.fadeText.style.opacity = 1; setTimeout(() => { SFX.train(false); }, 600);
   await wait(3.2); await fadeIn(2.4); setObj('梅崎の家（和泉コーポ 203）'); setTimeout(() => G.thought('泉南。……改札を出て、泉南通りを歩いて、米屋の先の細い道を入る。'), 1500);
 });
-Object.assign(window, { TOWN, TL, DOG, openPhone, phoneDial, famicomBug, stickyPrank, eatSuikaSlice, sayVoice, hasVoice, PASSERS, MOTHER, motherComesHome, THREE, composer, MDL, PROPS, ELV, elvCall, playerInCar, openChat, KEYS, G, P, DOORS, W, MT, LT, RPG, AU, camera, scene, renderer, FRIEND, BROTHER, SRC });
+Object.assign(window, { TOWN, TL, DOG, openPhone, phoneDial, famicomBug, stickyPrank, eatSuikaSlice, sayVoice, hasVoice, PASSERS, MOTHER, motherComesHome, THREE, composer, MDL, PROPS, ELV, elvCall, playerInCar, openChat, KEYS, G, P, DOORS, W, MT, LT, RPG, AU, camera, scene, renderer, FRIEND, BROTHER, SRC, ARC, FG, YAN, arcSit, arcStand, arcCoin, arcOnEnd, fgReset });
 try { init(); } catch (e) { $('load').textContent = 'エラー: ' + e.message + ' ' + (e.stack||'').replace(/http[^ )]*:/g,'L'); console.error(e); }
 
 </script>

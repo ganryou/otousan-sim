@@ -57,12 +57,13 @@ function thru(z) {
     case 'toilet': return DOORS.toilet.isOpen ? .8 : .22;
     case 'out': return DOORS.front.isOpen ? .6 : .07;
     case 'station': return .1;
+    case 'arcade': return .5;
     case 'store': return TOWN.superDoor && TOWN.superDoor.o > .5 ? .55 : .15;
   }
   return .05;
 }
 const DIRECT = { 'friend|out': .42, 'living|out': .09, 'brother|friend': .06, 'living|toilet': .1, 'brother|living': .08, 'friend|living': .05 };
-function trans(a, b) { if (a === b) return 1; if ((a === 'station' || a === 'store' || b === 'station' || b === 'store') && (a === 'out' || b === 'out')) return a === 'out' ? thru(b) : thru(a); const t = thru(a) * thru(b); const d = DIRECT[a + '|' + b] ?? DIRECT[b + '|' + a] ?? .02; return Math.min(1, Math.max(t, d)); }
+function trans(a, b) { if (a === b) return 1; if ((a === 'station' || a === 'store' || a === 'arcade' || b === 'station' || b === 'store' || b === 'arcade') && (a === 'out' || b === 'out')) return a === 'out' ? thru(b) : thru(a); const t = thru(a) * thru(b); const d = DIRECT[a + '|' + b] ?? DIRECT[b + '|' + a] ?? .02; return Math.min(1, Math.max(t, d)); }
 const _fw = new V3(), _up = new V3();
 function audioUpdate(camPos, zoneL) {
   if (!AU.ready) return; const L = AU.ctx.listener, t = now();

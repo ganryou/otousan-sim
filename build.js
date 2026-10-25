@@ -2,7 +2,7 @@
 // assets/textures/ の画像は assets/assets.js に埋め込む（ファイル直開きでも WebGL で使えるように）
 const fs = require('fs'), path = require('path');
 const S = f => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
-const js = ['01_core.js', '02_world.js', '03_actors.js', '026_town.js', '027_town_logic.js', '035_elevator.js', '04_audio.js', '05_rpg.js', '055_talk.js', '057_props.js', '058_people.js', '059_events.js', '06_game.js'].map(S).join('\n');
+const js = ['01_core.js', '02_world.js', '03_actors.js', '026_town.js', '027_town_logic.js', '028_arcade.js', '029_fighter.js', '035_elevator.js', '04_audio.js', '05_rpg.js', '055_talk.js', '057_props.js', '058_people.js', '059_events.js', '06_game.js'].map(S).join('\n');
 fs.writeFileSync(path.join(__dirname, 'index.html'), S('head.html') + '<script type="module">\n' + js + '\n</script>\n' + S('tail.html'));
 const td = path.join(__dirname, 'assets', 'textures');
 if (fs.existsSync(td)) {

@@ -29,12 +29,16 @@ const CAST = {
   umemom: { id: 14, speed: 1.0, pitch: 0, into: 1.1, vol: 1.0 },            // 冥鳴ひまり
   father_tel: { id: 13, speed: 0.84, pitch: -0.14, into: 0.5, vol: 1.0 },   // 青山龍星
   friend_tel: { id: 12, speed: 1.02, pitch: -0.03, into: 0.7, vol: 1.0 },   // 白上虎太郎
+  yan1: { id: 40, speed: 0.95, pitch: -0.04, into: 0.9, vol: 1.0 },         // 玄野武宏（ツンギレ）
+  yan2: { id: 34, speed: 0.92, pitch: -0.07, into: 0.8, vol: 1.0 },         // 白上虎太郎（おこ）
+  yan3: { id: 21, speed: 0.95, pitch: -0.02, into: 0.8, vol: 1.0 },         // 剣崎雌雄
+  fgann: { id: 81, speed: 0.95, pitch: -0.02, into: 1.6, vol: 1.1 },        // 青山龍星（熱血）
 };
 const SPECIAL = { '……そこでなにやってるんだ。': 82, 'てめ、ふざけんなよー！': 34, 'うわっ！': 33, '……は？ マジかよ。': 34 };                      // 青山龍星（不機嫌）
 
 function voClean(t) { return t.replace(/<[^>]+>/g, '').replace(/（[^）]*）/g, '').replace(/\s+/g, '').trim(); }
 function voKey(who, text) { const s = who + '|' + voClean(text); let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return 'vo_' + h.toString(16).padStart(8, '0'); }
-const READ = [['梅崎', 'うめざき'], ['和泉南', 'いずみみなみ'], ['泉南', 'せんなん'], ['和泉', 'いずみ'], ['中野坂上', 'なかのさかうえ'], ['親父', 'おやじ'], ['母さん', 'かあさん'], ['五十円', 'ごじゅうえん'], ['百十円', 'ひゃくじゅうえん']];
+const READ = [['梅崎', 'うめざき'], ['和泉南', 'いずみみなみ'], ['泉南', 'せんなん'], ['和泉', 'いずみ'], ['中野坂上', 'なかのさかうえ'], ['親父', 'おやじ'], ['母さん', 'かあさん'], ['五十円', 'ごじゅうえん'], ['百円', 'ひゃくえん'], ['センコー', 'せんこー'], ['百十円', 'ひゃくじゅうえん']];
 const forTTS = t => { let s = voClean(t); for (const [a, b] of READ) s = s.split(a).join(b); return s; };
 
 const lines = new Map(); const add = (who, t) => { if (!t || !/[ぁ-んァ-ン一-龥A-Za-z0-9]/.test(voClean(t))) return; lines.set(voKey(who, t), { who, t }); };
@@ -53,7 +57,8 @@ const lines = new Map(); const add = (who, t) => { if (!t || !/[ぁ-んァ-ン�
   }
 }
 // 2) ゲームのコード中のセリフ
-const code = ['06_game.js', '058_people.js', '059_events.js', '055_talk.js', '027_town_logic.js'].map(SRC).join('\n');
+const code = ['06_game.js', '058_people.js', '059_events.js', '055_talk.js', '027_town_logic.js', '028_arcade.js', '029_fighter.js'].map(SRC).join('\n');
+for (const m of code.matchAll(/\['(\w+)', '([^']+)'\]/g)) if (CAST[m[1]]) add(m[1], m[2]);
 for (const m of code.matchAll(/(?:sayLine|L)\('(\w+)', '([^']+)'/g)) add(m[1], m[2]);
 for (let h = 1; h <= 12; h++) add('jiho', h + '時'); for (let m = 0; m < 60; m++) add('jiho', m + '分'); for (let s = 0; s < 60; s += 10) add('jiho', s + '秒'); for (const t of ['午前', '午後', 'を、お知らせします。']) add('jiho', t);
 for (const m of code.matchAll(/friendSays\('([^']+)'/g)) add('friend', m[1]);
