@@ -2,7 +2,7 @@
 // assets/textures/ の画像は assets/assets.js に埋め込む（ファイル直開きでも WebGL で使えるように）
 const fs = require('fs'), path = require('path');
 const S = f => fs.readFileSync(path.join(__dirname, 'src', f), 'utf8');
-const js = ['01_core.js', '02_world.js', '03_actors.js', '026_town.js', '027_town_logic.js', '028_arcade.js', '029_fighter.js', '035_elevator.js', '04_audio.js', '05_rpg.js', '055_talk.js', '057_props.js', '058_people.js', '059_events.js', '06_game.js'].map(S).join('\n');
+const js = ['01_core.js', '02_world.js', '03_actors.js', '026_town.js', '0265_plateau.js', '027_town_logic.js', '028_arcade.js', '029_fighter.js', '035_elevator.js', '04_audio.js', '05_rpg.js', '055_talk.js', '057_props.js', '058_people.js', '059_events.js', '06_game.js'].map(S).join('\n');
 fs.writeFileSync(path.join(__dirname, 'index.html'), S('head.html') + '<script type="module">\n' + js + '\n</script>\n' + S('tail.html'));
 const td = path.join(__dirname, 'assets', 'textures');
 if (fs.existsSync(td)) {
@@ -23,6 +23,9 @@ if (fs.existsSync(td)) {
   // 3Dモデル（assets/models/*.glb → キー mdl_名前）
   const md = path.join(__dirname, 'assets', 'models');
   if (fs.existsSync(md)) for (const f of fs.readdirSync(md).filter(f => f.endsWith('.glb'))) ent.push('A[' + JSON.stringify('mdl_' + f.slice(0, -4)) + ']="data:model/gltf-binary;base64,' + fs.readFileSync(path.join(md, f)).toString('base64') + '";');
+  // 試作：PLATEAU の建物・道路（tools/plateau_convert.js の出力）
+  const pf = path.join(__dirname, 'assets', 'plateau', 'plateau.json');
+  if (fs.existsSync(pf)) ent.push('A["plateau"]=' + fs.readFileSync(pf, 'utf8') + ';');
   // 効果音（効果音/【名前】xxx.wav → キー se_名前）
   const sd = path.join(__dirname, '効果音');
   if (fs.existsSync(sd)) for (const f of fs.readdirSync(sd).filter(f => /.(wav|mp3|ogg)$/i.test(f))) {

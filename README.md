@@ -43,16 +43,17 @@
 
 ## 光の焼き込み（Blender）
 1. `node serve.js` → http://localhost:8765/?debug を開き、コンソールで `await EXPORT_BAKE()`（assets/bake/bake_in.glb ができる）
-2. `blender.exe -b --factory-startup -P tools/bake.py`（昼・夕方の2枚を焼く。RTX 5070 で約30秒）
+2. `"D:\tools\blender-5.2\blender.exe" -b --factory-startup -P tools/bake.py`（昼・夕方の2枚を焼く。RTX 5070 で約30秒）
 3. `node build.js`
 - 室内のドア・家具の配置を変えたら、1〜3をやり直す
-- 3Dモデル：Poly Haven（CC0）。元データは `assets/models_src/`、`blender.exe -b --factory-startup -P tools/convert_models.py` で `assets/models/*.glb` に軽量化
+- 3Dモデル：Poly Haven（CC0）。元データは `assets/models_src/`、`"D:\tools\blender-5.2\blender.exe" -b --factory-startup -P tools/convert_models.py` で `assets/models/*.glb` に軽量化
 - 効果音：`効果音/【名前】*.wav` を自動で読み込む（Windows XP の音は Microsoft の著作物。**配布・公開するときは外すこと**。外すと自作の電子音に戻る）
 - 声：VOICEVOX（VOICEVOX:青山龍星／白上虎太郎／冥鳴ひまり／ちび式じい）。VOICEVOX を起動して `node tools/gen_voice.js` を実行すると、ゲーム内のセリフを集めて `assets/voice/` に音声を作る（作成済みのものは飛ばす）。セリフを追加・変更したら再実行 → `node build.js`
 
 ## クレジット
 - 音声：VOICEVOX:青山龍星 / VOICEVOX:白上虎太郎 / VOICEVOX:冥鳴ひまり / VOICEVOX:ちび式じい / VOICEVOX:玄野武宏 / VOICEVOX:雀松朱司 / VOICEVOX:No.7 / VOICEVOX:四国めたん / VOICEVOX:麒ヶ島宗麟 / VOICEVOX:九州そら / VOICEVOX:東北イタコ / VOICEVOX:剣崎雌雄
 - 質感・3Dモデル：Poly Haven（CC0） https://polyhaven.com
+- 3D都市モデル：国土交通省 PLATEAU（杉並区 2025年度）を加工して作成（試作ブランチ plateau-trial のみ）
 - 3D描画：three.js（MIT）
 - 地名・店名・学校名・人物はすべて架空です。
 - 公開版には Windows の効果音は含まれていません（自作の電子音で鳴ります）。

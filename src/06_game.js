@@ -277,7 +277,9 @@ function updatePlayer(dt) {
   P.pos.copy(np);
   if (moved > 1e-4) { P.bob += moved * 5.2; P.stepD += moved; const stride = indoor ? .55 : .7; if (P.stepD > stride) { P.stepD = 0; const s = surfaceType(P.pos); SFX.step(s, s === 'wood' && Math.random() < .07); } }
 }
+let CAMV = null; // デバッグ：上空カメラ（CAM）
 function updateCamera() {
+  if (CAMV) { camera.position.set(CAMV[0], CAMV[1], CAMV[2]); camera.lookAt(CAMV[3], CAMV[4], CAMV[5]); return; }
   if (G.seated) { camera.position.set(18.7, 2.95 + .78, -2.5); }
   else if (G.arcSeat) { camera.position.copy(ARC.seatCam); if (ARC.shake > 0) camera.position.y += (Math.random() - .5) * .012; }
   else camera.position.set(P.pos.x, P.pos.y + P.eye + Math.sin(P.bob) * .022, P.pos.z);
@@ -431,6 +433,9 @@ async function loadBake() {
 }
 function setBakeEvening() { if (!W.baked || !W.lm.eve) return; for (const m of W.bakedMats) { m.lightMap = W.lm.eve; m.lightMapIntensity = m.userData.lmBase / W.lm.meta.eve; } }
 if (DEBUG) window.EXPORT_BAKE = exportBake;
+// 見比べ用：同じ場所・向きに立つ（x, z, 向き[度], 高さ）
+if (DEBUG) window.TP = (x, z, yawDeg = 0, y = 0, pitchDeg = 0) => { CAMV = null; P.pos.set(x, y, z); P.yaw = yawDeg * Math.PI / 180; P.pitch = pitchDeg * Math.PI / 180; P.vel.set(0, 0, 0); };
+if (DEBUG) window.CAM = (...v) => { CAMV = v.length ? v : null; }; // 上空から見る（CAM() で元に戻る）
 if (DEBUG) window.STEP = (sec, dt = 1 / 30) => { for (let t = 0; t < sec; t += dt) frame(dt, false); composer.render(); };
 
 // ============================================================

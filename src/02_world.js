@@ -704,7 +704,7 @@ function buildDistant() {
   winT.wrapS = winT.wrapT = THREE.RepeatWrapping; winT.repeat.set(3, 3);
   const bwm = new THREE.MeshStandardMaterial({ map: winT, roughness: .8, emissive: 0x000000, emissiveMap: winT });
   MT.distantWin = bwm;
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < (PLATEAU ? 0 : 26); i++) {
     const a = i / 26 * Math.PI * 2 + R(-.1, .1), rr = R(95, 170), x = 8 + Math.cos(a) * rr, z = -8 + Math.sin(a) * rr;
     const w = R(12, 30), d = R(10, 20), h = R(12, 42);
     const g = new THREE.BoxGeometry(w, h, d); g.rotateY(-a); g.translate(x, h / 2, z);
@@ -716,6 +716,6 @@ function buildDistant() {
 }
 
 function buildWorld() {
-  buildGround(); buildLot(); buildMansion(); buildUnit203(); buildHouses(); buildPoles(); buildTrees(); buildDistant(); buildElevator(); buildWeeds(); buildTown();
+  buildGround(); buildLot(); buildMansion(); buildUnit203(); buildHouses(); buildPoles(); buildTrees(); buildDistant(); buildElevator(); buildWeeds(); buildTown(); if (PLATEAU) buildPlateau();
   flushStatic();
 }

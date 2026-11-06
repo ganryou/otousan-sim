@@ -35,8 +35,8 @@ function buildTown() {
   pedSignal(-69.4, -47.8, Math.PI); pedSignal(-69.4, -56.2, 0);
   // 歩道橋の代わりに、遠くの環七沿いのビル
   const bM = [0xa8a49a, 0x9a9ca0, 0xb8b0a0, 0x8f9498].map(c => M({ map: TX.stucco, color: c, uv: 3 }));
-  for (let z = -130; z < 30; z += R(10, 16)) { if (z > -64 && z < -40) continue; const h = R(10, 26), d = R(10, 16); box(-96 - d, -96.3, 0, h, z, z + R(8, 13), pick(bM), { col: false }); TOWN.windows.push(winPanel(-96.32, 2, h - 1, z + .5, z + 7, 'x+')); }
-  for (let z = -130; z < -64; z += R(10, 16)) { const h = R(8, 18); box(-69.5 + 0.1, -60 + R(-2, 0), 0, h, z, z + R(8, 12), pick(bM), { col: false }); }
+  if (!PLATEAU) for (let z = -130; z < 30; z += R(10, 16)) { if (z > -64 && z < -40) continue; const h = R(10, 26), d = R(10, 16); box(-96 - d, -96.3, 0, h, z, z + R(8, 13), pick(bM), { col: false }); TOWN.windows.push(winPanel(-96.32, 2, h - 1, z + .5, z + 7, 'x+')); }
+  if (!PLATEAU) for (let z = -130; z < -64; z += R(10, 16)) { const h = R(8, 18); box(-69.5 + 0.1, -60 + R(-2, 0), 0, h, z, z + R(8, 12), pick(bM), { col: false }); }
   // ---- 商店街
   const N = 'n', S = 's';
   shop(-67, -60.5, N, { name: '喫茶 ロア', col: 0x5a3a2a, awn: [0x5a3a2a, 0xe8d8b8], type: 'cafe' });
